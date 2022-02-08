@@ -117,27 +117,49 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
 
   bool success = true;
   size_t itr;
-  cout<<"---------------------"<<endl;
 
+  std::vector<double> prev_par = parameters.back();
+  double prev_score = DBL_MAX;
   for(itr = 1 ; itr<=8 && success; itr++){
     scan_associations_.clear();
     success = BuildOptimizationProblem(scans, reg_cov.back(), guess, soft_constraints);
     if(!success)
       break;
+
     success = SolveOptimizationProblem();
-    if(summary_.iterations.back().relative_decrease<0.000001){
-      //cout<<"break - relative decrease: "<<summary_.iterations.back().relative_decrease<<endl;
+    double current_score = summary_.final_cost;
+    const double rel_improvement = (prev_score-current_score)/prev_score;
+    const Eigen::Vector2d trans_diff(parameters.back()[0] - prev_par[0],parameters.back()[1] - prev_par[1]);
+    const double rot_diff = fabs(parameters.back()[2] - prev_par[2])*180/M_PI;
+
+    cout<<"trans diff: "<<trans_diff.norm()<<", rot diff: "<<rot_diff<<endl;
+    if(itr > 1 && (trans_diff.norm() < 0.001 && rot_diff <0.01) ){ // this movement is so small, no need to waste time on details of this level. Could be that the sensor is stationary
+      CFEAR_Radarodometry::timing.Document("no-param-change", 1,true);
       break;
     }
-    else if(summary_.iterations.size()==1){
-      //cout<<"break - iterations: "<<summary_.iterations.back().relative_decrease<<endl;
-      break;
+
+    if( itr > min_itr){
+      if(prev_score < current_score) // potential problem, recover to prev iteration
+      {
+        CFEAR_Radarodometry::timing.Document("prev-better", 1,true);
+        parameters.back() = prev_par;
+        break;
+      }
+      else if(rel_improvement < score_tolerance ){
+        CFEAR_Radarodometry::timing.Document("rel-outter-improvement", 1,true);
+        break;
+      }
+      else if(summary_.iterations.back().relative_decrease < score_tolerance  || summary_.iterations.size()==1){ // this is a sign
+        CFEAR_Radarodometry::timing.Document("rel-inner-improvement", 1,true);
+        break;
+      }
     }
-    //cout<<"continue: "<<summary_.is_constrained<<endl;
+    prev_score = current_score;
+    prev_par = parameters.back();
     //cout<<"build: "<<t2-t1<<", solve: "<<t3-t2<<endl;
   }
-  //cout<<"itr: "<<itr<<", continue: "<<summary_.iterations.back().relative_decrease<<endl;
-  //cout<<"---------------------"<<endl;
+  cout<<"itrs: "<<itr<<endl;
+  CFEAR_Radarodometry::timing.Document("itrs", (double)itr);
   //cout<<"itrs: "<<itr<<endl;
 
   if(success){
@@ -188,7 +210,7 @@ bool n_scan_normal_reg::GetCost(std::vector<MapNormalPtr>& scans, std::vector<Ei
 
   return summary_.IsSolutionUsable();
 
-    score_ = this->summary_.final_cost/this->summary_.num_residuals;
+  score_ = this->summary_.final_cost/this->summary_.num_residuals;
 
 
 }

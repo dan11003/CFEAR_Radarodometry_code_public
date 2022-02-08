@@ -75,6 +75,8 @@ private:
   double loss_limit_ = 0.1;
   double cov_scale_ = 1;
   double regularization_ = 0.01;
+  const double score_tolerance = 0.00001;
+  const double max_itr = 8, min_itr = 2;
 
 };
 
