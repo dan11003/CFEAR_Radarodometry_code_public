@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+<!-- CFEAR-3 parameters -->
+<arg name="z_min" default="60"/>
+<arg name="kstrongest" default="40"/>
+<arg name="resolution" default="3"/>
+<arg name="cost_type" default="P2P"/>
+<arg name="submap_scan_size" default="4"/>
+
+<!-- Dataset specific parameters -->
+<arg name="dataset" default="mulran"/>
+<arg name="range_resolution" default="0.0595238"/>
+<arg name="reversed_direction_radar" default="true"/>
+<!-- optional parameters, consider decreasing this if walls are very close to the sensor.-->
+<arg name="min_distance" default="2.5"/>
+<arg name="start_driver" default="true"/>
+
+<!-- VISUALIZATION -->
+<node pkg="rviz" type="rviz" name="rviz" args="-d $(find cfear_radarodometry)/rviz/odom.rviz" />
+
+<!-- CFEAR odometry -->
+<include file="$(find cfear_radarodometry)/launch/odom.launch">
+    <arg name="resolution" value="$(arg resolution)"/>
+    <arg name="cost_type" value="$(arg cost_type)"/>
+    <arg name="radar_ccw" value="$(arg reversed_direction_radar)"/> <!-- dataset specific parameter -->
+    <arg name="submap_scan_size" value="$(arg submap_scan_size)"/>
+</include>
+
+<group if="$(arg start_driver)"> <!-- not the same as in the paper -->
+    <node pkg="cfear_radarodometry" type="radar_filter_node" name="radar_filter_node" output="log">
+        <param name="z_min" value="$(arg z_min)"/>
+        <param name="range_res" value="$(arg range_resolution)"/> <!-- dataset specific parameter -->
+        <param name="dataset" value="$(arg dataset)"/> <!-- dataset specific parameter -->
+        <param name="min_distance" value="$(arg min_distance)"/>
+        <param name="kstrongest" value="$(arg kstrongest)"/>
+        <param name="radar_frameid" value="sensor_est"/>
+    </node>
+</group>
+
+</launch>

@@ -1,0 +1,97 @@
+#!/bin/bash
+
+visualize=$2
+
+export PARAMETER_FILE=$1 #"params/oxford_cfear-1"
+
+if [ "$1" = "--help" ]
+then
+  printf "\n###########################SUBMAP EVALUATION ########################################\n"
+  printf "#                                                                                   #\n"
+  printf "# Alowed options:                                                                   #\n"
+  printf "# --visualize       Visualize the process of creating  and evaluating submaps       #\n"
+  printf "#                                                                                   #\n"
+  printf "#####################################################################################\n"
+
+
+  killall -r rviz >/dev/null
+  killall -r offline_odometry >/dev/null
+  killall -r evaluation>/dev/null
+  killall -r ./worker >/dev/null
+  killall -r execute_sequence /dev/null
+  killall -r  /dev/null
+  pkill -P $$
+  exit 0
+fi
+if [ "$1" = "--visualize" ]
+then
+dir=`rospack find radar_mapping`
+rviz_config="${dir}/rviz/eval.rviz"
+rosrun rviz rviz -d ${rviz_config} &
+fi
+
+
+
+source ${PARAMETER_FILE}
+echo "start workers: source ${PARAMETER_FILE}"
+
+current_date=`date '+%Y-%m-%d_%H:%M'`
+started=`date '+%Y/%m/%d_%H:%M'`
+echo $current_date
+
+
+
+export STAMPED_OUTPUT_EVAL_DIR="$EVAL_OUTPUT_BASE_PATH/${EVALUATION_description}_${current_date}"
+mkdir -p $STAMPED_OUTPUT_EVAL_DIR
+
+echo "Starting evaluation ${started} output directory ${STAMPED_OUTPUT_EVAL_DIR}"
+#exit
+
+#pars="--radar_ccw  --soft_constraint  --disable_compensate  --cost_type --submap_scan_size --registered_min_keyframe_dist  --res  --submap_scan_size "
+
+for (( th_index="1"; $th_index<=${NR_WORKERS}; th_index++ ))
+do
+    ./worker ${th_index} ${STAMPED_OUTPUT_EVAL_DIR} ${PARAMETER_FILE} &
+done
+sleep 1
+wait
+echo "finished all workers"
+merge_script_path=`rospack find radar_mapping`/launch/oxford/eval/merge_eval.py
+python3  ${merge_script_path} --dir ${STAMPED_OUTPUT_EVAL_DIR}/ --prefix ${EVALUATION_description}_${current_date}
+#cat
+#cat  | ssmtp dla.adolfsson@gmail.com
+#mpack -s "${EVALUATION_description}" ${STAMPED_OUTPUT_EVAL_DIR}/*.csv dla.adolfsson@gmail.com
+
+
+
+#echo "(t)erminate?, (e)xit"
+#while [ true ] ; do
+#read -p 'input: ' resp
+#if [ $resp = "t" ] ; then
+#  echo "user terminated"
+#  pkill -P $$
+#  exit 0
+#elif [ $resp = "e" ] ; then
+#  exit 0
+#  echo "user clean exit"
+#fi
+#echo "timeout"
+#done
+
+
+# echo "NEW EVALUATION --- PARAMETERS"
+# printf 'Sequence: %s\n' "${EVALUATION_sequence[@]}"
+# printf 'Resolutions: %s\n' "${EVALUATION_res[@]}"
+# printf 'CCW: %s\n' "${EVALUATION_radar_ccw[@]}"
+# printf 'Soft constraints: %s\n' "${EVALUATION_soft_constraint[@]}"
+# printf 'Disable compensate: %s\n' "${EVALUATION_disable_compensate[@]}"
+# printf 'Cost type: %s\n' "${EVALUATION_cost_type[@]}"
+# printf 'submap keyframes: %s\n' "${EVALUATION_submap_scan_size[@]}"
+# printf 'Keyframe distance: %s\n' "${EVALUATION_registered_min_keyframe_dist[@]}"
+
+
+
+
+#echo "execute $pars"
+#sh execute_sequence.sh $pars
+

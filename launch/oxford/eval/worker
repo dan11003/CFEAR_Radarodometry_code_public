@@ -1,0 +1,110 @@
+#!/bin/bash
+thread_index=$1
+OUTPUT_FOLDER=$2
+PARAMETER_FILE=$3
+#echo "worker: ${1}, ${2}, ${3}"
+
+EVALUATION_sequence_arr1=($EVALUATION_sequence)
+EVALUATION_radar_ccw_arr3=($EVALUATION_radar_ccw)
+EVALUATION_soft_constraint_arr4=($EVALUATION_soft_constraint)
+EVALUATION_disable_compensate_arr5=($EVALUATION_disable_compensate)
+EVALUATION_cost_type_arr6=($EVALUATION_cost_type)
+EVALUATION_submap_scan_size_arr7=($EVALUATION_submap_scan_size)
+EVALUATION_registered_min_keyframe_dist_arr8=($EVALUATION_registered_min_keyframe_dist)
+EVALUATION_res_arr9=($EVALUATION_res)
+EVALUATION_kstrong_arr10=($EVALUATION_kstrong)
+EVALUATION_zmin_arr11=($EVALUATION_zmin)
+EVALUATION_loss_arr12=($EVALUATION_loss)
+EVALUATION_loss_lim_arr13=($EVALUATION_loss_limit)
+EVALUATION_covar_scale_arr14=($EVALUATION_covar_scale)
+EVALUATION_regularization_arr15=($EVALUATION_regularization)
+
+
+export EVALUATIONS_PARAMETER_SET_SIZE=$(( ${#EVALUATION_sequence_arr1[@]} * ${#EVALUATION_radar_ccw_arr3[@]} * ${#EVALUATION_soft_constraint_arr4[@]}* ${#EVALUATION_disable_compensate_arr5[@]}* ${#EVALUATION_cost_type_arr6[@]}* ${#EVALUATION_submap_scan_size_arr7[@]}* ${#EVALUATION_registered_min_keyframe_dist_arr8[@]}* ${#EVALUATION_res_arr9[@]}* ${#EVALUATION_kstrong_arr10[@]}* ${#EVALUATION_zmin_arr11[@]}* ${#EVALUATION_loss_arr12[@]}* ${#EVALUATION_loss_lim_arr13[@]}* ${#EVALUATION_covar_scale_arr14[@]}* ${#EVALUATION_regularization_arr15[@]} ))
+
+export EVAL_PER_WORKER=$((EVALUATIONS_PARAMETER_SET_SIZE / NR_WORKERS))
+#Output folder: ${OUTPUT_FOLDER}
+echo "Worker id: ${thread_index}. Tot nr of jobs ${EVAL_PER_WORKER}"
+
+sleep 1
+#BASE_PATH="/home/daniel/rosbag/oxford-eval-sequences/$sequence/radar/${sequence}.bag"
+job_nr="0"
+worker_job_nr="1"
+#echo "output:::${EVALUATION_sequence}"
+for seq in "${EVALUATION_sequence_arr1[@]}"
+do
+echo "${seq}"
+    for ccw in "${EVALUATION_radar_ccw_arr3[@]}"
+    do
+echo "${ccw}"
+        for sc in "${EVALUATION_soft_constraint_arr4[@]}"
+        do
+echo "${sc}"
+            for comp in "${EVALUATION_disable_compensate_arr5[@]}"
+            do
+echo "${comp}"
+                for cost in "${EVALUATION_cost_type_arr6[@]}"
+                do
+echo "${cost}"
+                    for keyframes in "${EVALUATION_submap_scan_size_arr7[@]}"
+                    do
+echo "${keyframes}"
+                        for dist in "${EVALUATION_registered_min_keyframe_dist_arr8[@]}"
+                        do
+echo "${dist}"
+                            for res in "${EVALUATION_res_arr9[@]}"
+                            do
+echo "${res}"
+                                for kstrong in "${EVALUATION_kstrong_arr10[@]}"
+                                do
+echo "${kstrong}"
+                                    for zmin in "${EVALUATION_zmin_arr11[@]}"
+                                    do
+echo "${zmin}"
+                                        for loss in "${EVALUATION_loss_arr12[@]}"
+                                        do
+echo "${loss}"
+                                	    for loss_lim in "${EVALUATION_loss_lim_arr13[@]}"
+                                	    do
+echo "${loss_lim}"
+						for cov_scale in "${EVALUATION_covar_scale_arr14[@]}"
+                                        	do
+echo "${cov_scale}"
+	                                	    for regularization in "${EVALUATION_regularization_arr15[@]}"
+                                	    	    do
+echo "${regularization}"
+
+                                    			job_nr=$((job_nr+1))
+                                    			responsible_thread=$((job_nr%$NR_WORKERS +1))
+                                    			if [ "${responsible_thread}" = "${thread_index}" ]
+                                    			then
+
+                                        			echo "Worker ${thread_index} job: ${worker_job_nr}/${EVAL_PER_WORKER} (job${job_nr}/${EVALUATIONS_PARAMETER_SET_SIZE})"
+                                        			JOB_FOLDER="${OUTPUT_FOLDER}/job_${job_nr}"
+                                        			worker_job_nr=$((worker_job_nr+1))
+                                        			mkdir -p $JOB_FOLDER
+                                                                ./execute_sequence ${seq} ${JOB_FOLDER} ${ccw} ${sc} ${comp} ${cost} ${keyframes} ${dist} ${res} ${kstrong} ${job_nr} ${zmin} ${loss} ${loss_lim} ${cov_scale} ${regularization} ${PARAMETER_FILE}
+                                        			#kitti_dir=`rospack find kitti-odom-eval`
+                                        			eval="$KITTI_DIR/python/eval_odom.py --dir ${JOB_FOLDER} --align 6dof --force yes"
+                                        			#echo "eval command: $eval"
+                                        			python3 $eval >/dev/null
+
+                                        		fi
+						   done
+						done
+					    done
+                                	done
+                                    done    		
+                                done
+                            done
+                        done
+                    done
+                done
+            done
+        done
+    done
+done
+echo "Worker ${thread_index} finished"
+#pars="--sequence SEQUENCE --radar_ccw $3 --soft_constraint $4 --disable_compensate $5 --cost_type $6 --submap_scan_size $7 --registered_min_keyframe_dist $8 --res $9"
+#echo "pars: ${pars}"
+#rosrun radar_mapping offline_odometry  $pars<

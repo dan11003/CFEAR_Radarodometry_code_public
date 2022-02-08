@@ -1,0 +1,24 @@
+<!-- This file shows parameters of the various configurations -->
+<!-- CFEAR-1 -->
+	<!--<arg name="z_min" default="70"/> >
+	<arg name="kstrongest" default="12"/>
+	<arg name="resolution" default="3.5"/>
+	<arg name="cost_type" default="P2L"/>
+	<arg name="submap_scan_size" default="1"/>-->
+<!-- CFEAR-1 -->
+
+<!-- CFEAR-2 -->
+	<!--<arg name="z_min" default="70"/> 
+	<arg name="kstrongest" default="12"/>
+	<arg name="resolution" default="3.5"/>
+	<arg name="cost_type" default="P2L"/>
+	<arg name="submap_scan_size" default="3"/>  -->
+<!-- CFEAR-2 -->
+
+<!-- CFEAR-3>
+	<arg name="z_min" default="60"/> 
+	<arg name="kstrongest" default="40"/>
+	<arg name="resolution" default="3"/>
+	<arg name="cost_type" default="P2P"/>
+	<arg name="submap_scan_size" default="4"/>	
+ CFEAR-3 -->

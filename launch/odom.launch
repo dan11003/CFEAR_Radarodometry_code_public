@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+<!-- PARAMETERS -->
+<arg name="reg_service_topic" default="/registration"/>
+<arg name="world_frame" default="world"/>
+<arg name="registered_topic" default="radar_registered"/>
+<arg name="lidar_odom_topic" default="radar_odom"/>
+<arg name="use_keyframe" default="true"/>
+<arg name="resolution" default="3"/>
+<arg name="cost_type" default="P2P"/>
+<arg name="radar_ccw" default="false"/>
+<arg name="submap_scan_size" default="4"/>
+
+<!-- start odometry node -->
+<node pkg="cfear_radarodometry" type="cfear_radarodometry_node" name="cfear_radarodometry_node" output="screen">
+
+<param name="odometry_link_id" value="$(arg world_frame)"/>
+    <param name="input_points_topic" value="/Navtech/Filtered"/>
+    <param name="scan_registered_latest_topic" value="$(arg registered_topic)"/>
+    <param name="odom_latest_topic" value="$(arg lidar_odom_topic)"/>
+    <param name="scan_registered_keyframe_topic" value="$(arg registered_topic)_keyframe"/>
+    <param name="odom_keyframe_topic" value="$(arg lidar_odom_topic)_keyframe"/>
+
+    <!-- a minimum movement is required before fusing frames -->
+    <param name="use_keyframe" value="$(arg use_keyframe)"/>
+    <param name="registered_min_keyframe_dist" value="1.5"/>
+    <param name="registered_min_keyframe_rot_deg" value="5"/>
+
+    <!-- Most important paramerters -->
+    <param name="res" value="$(arg resolution)"/> <!-- Size of oriented surface points and radius of association to determine correspondances -->
+    <param name="cost_type" value="$(arg cost_type)"/>
+    <param name="radar_ccw" value="$(arg radar_ccw)"/>
+    <param name="submap_scan_size" value="$(arg submap_scan_size)"/> <!-- Used as reference during registration. Requires linearly longer time for registration. -->
+</node>
+
+</launch>

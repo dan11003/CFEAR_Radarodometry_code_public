@@ -1,0 +1,41 @@
+#!/bin/bash
+
+export EVAL_OUTPUT_BASE_PATH="/home/daniel/rosbag/oxford-eval-sequences/eval"
+export BAG_BASE_PATH="/home/daniel/rosbag/oxford-eval-sequences"
+export EVAL_DATASET="oxford"
+export NR_WORKERS="8"
+export KITTI_DIR=`rospack find kitti-odom-eval`
+export EVALUATION_description="oxford-cfear2"
+export EVALUATION_sequence="2019-01-10-12-32-52-radar-oxford-10k 2019-01-16-13-09-37-radar-oxford-10k 2019-01-17-13-26-39-radar-oxford-10k 2019-01-18-14-14-42-radar-oxford-10k 2019-01-18-15-20-12-radar-oxford-10k 2019-01-16-11-53-11-radar-oxford-10k 2019-01-10-11-46-21-radar-oxford-10k 2019-01-18-14-46-59-radar-oxford-10k"
+export EVALUATION_radar_ccw="false"
+export EVALUATION_soft_constraint="false"
+export EVALUATION_disable_compensate="false"
+export EVALUATION_cost_type="P2L"
+export EVALUATION_submap_scan_size="3"
+export EVALUATION_registered_min_keyframe_dist="1.5"
+export EVALUATION_res="3.5" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
+export EVALUATION_kstrong="12" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
+#export EVALUATION_kstrong="1 3 6 9 12 15 17 20 25 30 35" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
+export EVALUATION_zmin="60" # between 1 and 100
+#export EVALUATION_RANGE_RES="0.0595238" # between 1 and 100
+export EVALUATION_RANGE_RES="0.0432" 
+
+
+
+echo "-----Loaded PARAMETER LIST -------"
+ printf 'Sequence: %s\n' "${EVALUATION_sequence[@]}"
+ printf 'CCW: %s\n' "${EVALUATION_radar_ccw[@]}"
+ printf 'Soft constraints: %s\n' "${EVALUATION_soft_constraint[@]}"
+ printf 'Disable compensate: %s\n' "${EVALUATION_disable_compensate[@]}"
+ printf 'Cost type: %s\n' "${EVALUATION_cost_type[@]}"
+ printf 'submap keyframes: %s\n' "${EVALUATION_submap_scan_size[@]}"
+ printf 'Keyframe distance: %s\n' "${EVALUATION_registered_min_keyframe_dist[@]}"
+ printf 'Resolutions: %s\n' "${EVALUATION_res[@]}"
+ printf 'Kstrongest: %s\n' "${EVALUATION_kstrong[@]}"
+ printf 'zmin: %s\n' "${EVALUATION_zmin[@]}"
+echo "-----------------------------"
+
+
+
+
+
