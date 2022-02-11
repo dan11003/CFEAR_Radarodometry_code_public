@@ -329,7 +329,7 @@ void StructuredKStrongest::getPeaksFilteredPointCloud(pcl::PointCloud<pcl::Point
         p.x = (range_res_half + range_res_ * range)* cos_t;
         p.y = (range_res_half + range_res_ * range)* sin_t;
         p.intensity = ir.first;
-        p.z = 0;(p.intensity-z_min_)/10.0;
+        p.z = 0; //(p.intensity-z_min_)/10.0;
         output_pointcloud->push_back(p);
       }
     }

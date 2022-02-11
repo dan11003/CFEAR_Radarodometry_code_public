@@ -182,72 +182,10 @@ void OdometryKeyframeFuser::AddToReference(PoseScanVector& reference, MapNormalP
   }
 }
 
-void OdometryKeyframeFuser::PlotAssociations( std::vector<CFEAR_Radarodometry::MapNormalPtr>& scans, const std::vector<Eigen::Affine3d>& Tscans, const std::map<CFEAR_Radarodometry::int_pair,std::vector<CFEAR_Radarodometry::int_pair> >&  scan_associations, const ros::Time& t){
-
-  std::vector<Matrix6d> means(scans.size());
-
-  for(int i=0 ; i<means.size() ; i++){
-    means[i] = scans[i]->GetMeans();
-    for(int j=0 ; j<means[i].cols() ; j++)
-      means[i].block<3,1>(0, j) = Tscans[i]*means[i].block<3,1>(0, j);
-  }
-  std_msgs::ColorRGBA csrc, ctar;
-  csrc.a = 1;
-  csrc.r = 1;
-  csrc.g = 0;
-  csrc.b = 0;
-
-  ctar.a = 1;
-  ctar.r = 0;
-  ctar.g = 0;
-  ctar.b = 1;
-
-
-  visualization_msgs::MarkerArray marr;
-
-  static ros::Publisher pub_associations = nh_.advertise<visualization_msgs::MarkerArray>("associations",100);
-  for (auto const& p : scan_associations)
-  {
-
-
-    visualization_msgs::Marker m = GetDefault();
-
-    m.header.stamp = t;
-
-    m.points.resize(2*p.second.size());
-    m.colors.resize(2*p.second.size());
-    int scan_target = p.first.first;
-    int scan_src = p.first.second;
-    m.ns = std::to_string(scan_target)+std::string("-")+std::to_string(scan_src);
-    int nr_ass = 0;
-
-    for (auto && ass : p.second ) {
-      const int idx_tar = ass.first;
-      const int idx_src = ass.second;
-      geometry_msgs::Point pnt_src;
-      pnt_src.x = means[scan_src](0, idx_src);
-      pnt_src.y = means[scan_src](1, idx_src);
-      pnt_src.z = 0;
-
-      geometry_msgs::Point pnt_tar;
-      pnt_tar.x = means[scan_target](0, idx_tar);
-      pnt_tar.y = means[scan_target](1, idx_tar);
-      pnt_tar.z = 0;
-      m.points[nr_ass] = pnt_src;
-
-      m.colors[nr_ass++] = csrc;
-      m.points[nr_ass] = pnt_tar;
-      m.colors[nr_ass++] = ctar;
-
-
-    }
-    marr.markers.push_back(m);
-  }
-  pub_associations.publish(marr);
-}
 
 void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud) {
 
+  ros::Time t0 = ros::Time::now();
   if(par.compensate)
     Compensate(*cloud, Tmot, par.radar_ccw);
 
@@ -257,9 +195,11 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   std::vector<Matrix6d> cov_vek;
   std::vector<CFEAR_Radarodometry::MapNormalPtr> scans_vek;
   std::vector<Eigen::Affine3d> T_vek;
-  Eigen::Vector3d origin;
-  origin << 0, 0, 0;
-  CFEAR_Radarodometry::MapNormalPtr Pcurrent = CFEAR_Radarodometry::MapNormalPtr(new MapPointNormal(cloud, par.res, origin, par.use_raw_pointcloud));
+  ros::Time t1 = ros::Time::now();
+  CFEAR_Radarodometry::MapNormalPtr Pcurrent = CFEAR_Radarodometry::MapNormalPtr(new MapPointNormal(cloud, par.res, Eigen::Vector2d(0,0), par.weight_intensity_, par.use_raw_pointcloud));
+
+
+  ros::Time t2 = ros::Time::now();
   Eigen::Affine3d Tguess;
   if(par.use_guess)
     Tguess = T_prev*Tmot;
@@ -280,6 +220,7 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   bool success = true;
   if(!par.disable_registration)
     bool success = radar_reg->Register(scans_vek, T_vek, cov_vek, par.soft_constraint);
+  ros::Time t3 = ros::Time::now();
   //cout<<radar_reg->getScore()<<endl;
 
   if(success==false){
@@ -315,13 +256,18 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
 
   CFEAR_Radarodometry::timing.Document("velocity", Tmot.translation().norm()/Tsensor);
 
+  ndt_map::NDTMapMsg msg_ndt;
+  //static void ToNDTMsg(std::vector<cellptr>& cells, ndt_map::NDTMapMsg& msg);
+  //auto cells = Pcurrent->TransformCells(Tcurrent);
+
+  auto cells = Pcurrent->GetCells();
+  cell::ToNDTMsg(cells,msg_ndt);
+  msg_ndt.header.stamp = t;
+  msg_ndt.header.frame_id = "sensor_est";
+  static ros::Publisher pub_map = nh_.advertise<ndt_map::NDTMapMsg>("/ndt_map",100);
+  pub_map.publish(msg_ndt);
+
   if(success && fuse){
-    /*Eigen::MatrixXd surface;
-    //cout<<"outside : "<<Tcurrent.translation()(0)<<", "<<Tcurrent.translation()(1)<<endl;
-    //radar_reg->GetSurface(scans_vek, T_vek, cov_vek, par.soft_constraint, surface, 0.1, 3);
-    //cout<<surface.rows()<<" x "<<surface.cols()<<endl;
-    //PrintSurface("/home/daniel/Jupyter/CFEAR/CFEAR_evaluation/surfaceplot/surfaces/"+std::to_string(frame_nr_)+".txt", surface);
-    */
     distance_traveled += Tkeydiff.translation().norm();
     Tprev_fused = Tcurrent;
     pcl::PointCloud<pcl::PointXYZI> cld_keyframe = FormatScanMsg(*cloud, Tcurrent);
@@ -332,6 +278,11 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
     frame_nr_++;
     AddToReference(keyframes_, Pcurrent, Tprev_fused);
   }
+  ros::Time t4 = ros::Time::now();
+  CFEAR_Radarodometry::timing.Document("compensate", ToMs(t1-t0));
+  CFEAR_Radarodometry::timing.Document("build_normals", ToMs(t2-t1));
+  CFEAR_Radarodometry::timing.Document("register", ToMs(t3-t2));
+  CFEAR_Radarodometry::timing.Document("publish_etc", ToMs(t4-t3));
   T_prev = Tcurrent;
 }
 
@@ -345,7 +296,7 @@ void OdometryKeyframeFuser::pointcloudCallback(const sensor_msgs::PointCloud2::C
   this->processFrame(cloud);
   nr_callbacks_++;
   ros::Time t2 = ros::Time::now();
-  CFEAR_Radarodometry::timing.Document("Registration",CFEAR_Radarodometry::ToMs(t2-t));
+  CFEAR_Radarodometry::timing.Document("Registration-full",CFEAR_Radarodometry::ToMs(t2-t));
 }
 
 

@@ -4,8 +4,58 @@ namespace CFEAR_Radarodometry {
 std::map<std::string,ros::Publisher> MapPointNormal::pubs;
 double MapPointNormal::downsample_factor = 1;
 
+cell::cell(const pcl::PointCloud<pcl::PointXYZI>::Ptr input, const std::vector<int>& pointIdxNKNSearch, const bool weight_intensity, const Eigen::Vector2d& origin) : Nsamples_(pointIdxNKNSearch.size()) {
+  // Compute Covariance
+  Eigen::Vector2d tot(0, 0);
+  Eigen::MatrixXd w(Nsamples_, 1);
+  Eigen::MatrixXd x(Nsamples_, 2);
 
-MapPointNormal::MapPointNormal(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cld, float radius, const Eigen::Vector3d& origin, bool raw)  {
+  for(size_t i=0 ; i<Nsamples_ ; i++){ // build sample and weight block
+    x.block<1,2>(i,0) = Eigen::Vector2d(input->points[pointIdxNKNSearch[i]].x, input->points[pointIdxNKNSearch[i]].y);
+    w(i,0) = weight_intensity ? std::max(input->points[pointIdxNKNSearch[i]].intensity-60.0,0.0) : 1.0;
+  }
+
+  sum_intensity_ = w.sum();
+  avg_intensity_ = sum_intensity_/Nsamples_;
+  cout<<weight_intensity<<endl;
+  w = w/sum_intensity_; // normalize sum = 1.0
+
+  for(Eigen::Index i=0 ; i<Nsamples_ ; i++) // calculate mean by weighting, w sums to one, no need to normalize after
+    u_.block<2,1>(0,0) += w(i,0)*x.block<1,2>(i,0).transpose();
+
+  for(Eigen::Index i=0 ; i<Nsamples_ ; i++) // subtract mean
+    x.block<1,2>(i,0) = x.block<1,2>(i,0) - u_.block<2,1>(0,0).transpose(); //
+
+  Eigen::MatrixXd x_weighted(x.rows(),x.cols()); // Weighted
+  for(int i = 0; i < x.rows() ; i++)
+    x_weighted.block<1,2>(i,0) = w(i,0)*x.block<1,2>(i,0);
+
+  cov_ = x.transpose()*x_weighted; // weighted
+
+  valid_ = ComputeNormal(origin);
+}
+bool cell::ComputeNormal(const Eigen::Vector2d& origin)
+{
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix2d> es(cov_);
+  es.compute(cov_);
+
+  snormal_ = es.eigenvectors().col(0);
+  orth_normal = es.eigenvectors().col(1);
+  lambda_min = es.eigenvalues()[0];
+  lambda_max = es.eigenvalues()[1];
+  const double condition_number = lambda_max/lambda_min;
+  const double determinant = lambda_max*lambda_min;
+  const double det_tolerance = 0.00001;
+  const bool cov_reasonable = (condition_number <= 10000) && (determinant > det_tolerance); // one side is not unproportionally larger than the other and matrix is positive semidefinite
+  scale_ = log(condition_number/2.0) ; //Used for visualization - ranges from 0.1
+
+  Eigen::Vector2d Po_u = origin - u_;
+  if(snormal_.dot(Po_u)<0)
+    snormal_ = - snormal_;
+  return cov_reasonable;
+}
+
+MapPointNormal::MapPointNormal(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cld, float radius, const Eigen::Vector2d& origin, const bool weight_intensity, const bool raw) : weight_intensity_(weight_intensity)  {
 
   input_ = cld;
   downsampled_ = pcl::PointCloud<pcl::PointXY>::Ptr(new pcl::PointCloud<pcl::PointXY>());
@@ -18,18 +68,16 @@ MapPointNormal::MapPointNormal(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cld, 
   }
   if(raw){
     for(auto && p : input_->points){
-      Eigen::Vector3d u;
-      u << p.x, p.y, 0;
-      Eigen::Matrix3d cov = Eigen::Matrix3d::Identity();
-      cells.push_back(cell(u, cov, origin));
-      //cout<<"compute mean"<<endl;
+      Eigen::Vector2d u(p.x,p.y);
+      Eigen::Matrix2d cov = Eigen::Matrix2d::Identity();
+      cells.push_back(cell::GetIdentityCell(u,p.intensity));
     }
   }
   else
     ComputeNormals(origin);
 
   ComputeSearchTreeFromCells();
-    CFEAR_Radarodometry::timing.Document("Surface points",cells.size());
+  CFEAR_Radarodometry::timing.Document("Surface points",cells.size());
   //cout<<"created normal: input: "<<cld.size()<<" -> "<<cells.size()<<endl;
 
 }
@@ -40,8 +88,10 @@ MapPointNormal::MapPointNormal(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cld, 
   radius_ = radius;
   pcl::transformPointCloud(*cld, *input_, T); // transform to new reference frame
 
+  const Eigen::Affine2d T2d = Eigen::Translation2d(T.translation().topRows<2>()) *
+                 T.linear().topLeftCorner<2,2>();
   for(auto&& c : cell_orig)
-    cells.push_back( c.TransformCopy(T) );
+    cells.push_back( c.TransformCopy(T2d) );
 
   for(auto && c : cells){
     pcl::PointXY pxy;
@@ -66,9 +116,6 @@ inline double MapPointNormal::Gausian(const double x, const double u, const doub
 
 void MapPointNormal::ComputeSearchTreeFromCells(){
   downsampled_->clear();
-  if(cells.empty()){
-      cells.push_back(cell::GetDefault());
-  }
   for(auto && c : cells){
     pcl::PointXY pxy;
     pxy.x = c.u_(0);
@@ -79,72 +126,82 @@ void MapPointNormal::ComputeSearchTreeFromCells(){
   kd_cells.setSortedResults(true);
   kd_cells.setInputCloud(downsampled_);
 }
-bool MapPointNormal::ComputeMeanAndNormals(const std::vector<int>& pointIdxNKNSearch, Eigen::Vector3d& u, Eigen::Matrix3d& Cov){
+//Return true if succesfull
+/*bool MapPointNormal::ComputeMeanAndNormals(const std::vector<int>& pointIdxNKNSearch, Eigen::Vector2d& u, Eigen::Matrix2d& Cov, double& avg_intensity, int &Nsamples ){
 
-  //double sigma = 50;
-  Eigen::Vector2d tot(0,0);
-  Eigen::MatrixXd w(pointIdxNKNSearch.size(), 1);
-  Eigen::MatrixXd x(pointIdxNKNSearch.size(), 2);
+  Nsamples = pointIdxNKNSearch.size();
+  Eigen::Vector2d tot(0, 0);
+  Eigen::MatrixXd w(Nsamples, 1);
+  Eigen::MatrixXd x(Nsamples, 2);
+
 
   double max_intensity = 0;
-  for(int i=0 ; i<pointIdxNKNSearch.size() ; i++){ // build sample and weight block
+  for(int i=0 ; i<Nsamples ; i++){ // build sample and weight block
     x.block<1,2>(i,0) = Eigen::Vector2d(input_->points[pointIdxNKNSearch[i]].x, input_->points[pointIdxNKNSearch[i]].y);
-    //cout<<"x: "<<x.block<1,2>(i,0)<<endl;
-    //double intensity = cld->points[pointIdxNKNSearch[i]].intensity;
-    //w(i,0) = input_intensity_->points[pointIdxNKNSearch[i]].intensity;
-
-    //if(intensity>max_intensity)
-    //  max_intensity = intensity;
+    //w(i,0) = 1.0/x.rows();
+    w(i,0) = std::max(input_->points[pointIdxNKNSearch[i]].intensity-60.0,10.0);
   }
+
+  const double w_sum = w.sum();
+  avg_intensity = w_sum/Nsamples;
+  w = w/w_sum; // Manhattan
+  //const double w_sum = x.rows();
+  //w = w/x.rows(); // Manhattan
+
+  //w.normalize();   // Euclidian
   //cout<<"w: "<<w<<endl;
 
-  //for(int i=0;i<pointIdxNKNSearch.size();i++)
-  //  w(i,0) = Gausian(w(i,0), max_intensity, sigma); //reassign weight by intensity difference from max
-  //w = w/w.sum();    //normalize weights
-  u = Eigen::Vector3d(0,0,0);
-  //for(int i=0;i<x.rows();i++) // calculate mean by weighting
-  // u+= x.block<1,2>(i,0)*w(i,0);
+  u = Eigen::Vector2d(0,0);
+  for(int i=0 ; i<Nsamples ; i++){ // calculate mean by weighting, w sums to one, no need to normalize after
+    u.block<2,1>(0,0) += w(i,0)*x.block<1,2>(i,0).transpose();
+    //u.block<2,1>(0,0) += x.block<1,2>(i,0).transpose();
+  }
+  //u = u/w_sum;
 
-
-  for(int i=0;i<x.rows();i++) // calculate mean by weighting
-    u.block<2,1>(0,0) += x.block<1,2>(i,0).transpose();
-  u = u/pointIdxNKNSearch.size();
-  //cout<<"u: "<<u<<endl;
-
-  for(int i=0;i<pointIdxNKNSearch.size();i++) // subtract mean
+  for(int i=0 ; i<avg_intensity ; i++){ // subtract mean
+    //x.block<1,2>(i,0) = x.block<1,2>(i,0) - u.block<2,1>(0,0).transpose();
     x.block<1,2>(i,0) = x.block<1,2>(i,0) - u.block<2,1>(0,0).transpose();
-
-
+  }
   return WeightedCovariance(w, x, Cov);
-  //cout<<"u2: "<<u<<endl;
-  //cout<<"w: "<<w<<endl;
-  //cout<<"cov: "<<Cov<<endl;
+}*/
+/*
+bool MapPointNormal:: WeightedCovariance(Eigen::MatrixXd& w, Eigen::MatrixXd& x, Eigen::Matrix2d& cov){ //mean already subtracted from x
 
-}
+  Eigen::MatrixXd x_weighted(x.rows(),x.cols()); // Weighted
+  for(int i = 0; i < x.rows() ; i++){
+    x_weighted.block<1,2>(i,0) = w(i,0)*x.block<1,2>(i,0);
+    //x_weighted.block<1,2>(i,1) = w(i,0)*x_weighted.block<1,2>(i,1);
+  }
+  //const double unbiased_factor = 1.0/(x.rows()-1.0);
+  const double unbiased_factor = 1.0; //uniform//weighted
 
-bool MapPointNormal::WeightedCovariance(Eigen::MatrixXd& w, Eigen::MatrixXd& x, Eigen::Matrix3d& cov){ //mean already subtracted from x
-  Eigen::Matrix2d covSum = x.transpose()*x;
-  float n = x.rows();
-  cov.block<2,2>(0,0) = covSum*1.0/(n-1.0);
-  cov(2,2) = 1;
+  Eigen::Matrix2d covSum = unbiased_factor*x.transpose()*x_weighted; // weighted
+  //Eigen::Matrix2d covSum = unbiased_factor*x.transpose()*x;
+  //float n = x.rows();
+  cov = Eigen::Matrix2d::Identity()*0.1;
+  cov.block<2,2>(0,0) = covSum;
+  //cov(2,2) = 1;
   Eigen::JacobiSVD<Eigen::Matrix2d> svd(cov.block<2,2>(0,0));
-  double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+  const double cond = svd.singularValues()(0)/svd.singularValues()(1);
+  const double det = covSum.determinant();
+  const double det_tolerance = 0.00001;
   //cout<<"cond "<<cond<<endl;
-  return cond < 100000;
+  const bool cov_reasonable = (cond <= 10000) && (det > det_tolerance); // one side is not unproportionally larger than the other and matrix is positive semidefinite
+  //if(!cov_reasonable)
+  //  cout<<"problem: cond: "<<cond<<", det: "<<det<<endl;
+  //else
+  //  cout<<"ok: cond: "<<cond<<", det: "<<det<<endl;
+  return cov_reasonable;
 }
-
+*/
 /*std::vector<cell*> MapPointNormal::GetClosest(ce c, double d){
   if(cell!=NULL)
     return GetClosest(cell->u_, d);
   else return std::vector<cell*>();
 }*/
-std::vector<int> MapPointNormal::GetClosestIdx(const Eigen::Vector2d&  p, double d){
-  Eigen::Vector3d p3d;
-  p3d<<p(0),p(1),0;
-  return GetClosestIdx(p3d,d);
-}
 
-std::vector<int> MapPointNormal::GetClosestIdx(const Eigen::Vector3d&  p, double d){
+
+std::vector<int> MapPointNormal::GetClosestIdx(const Eigen::Vector2d&  p, double d){
 
   pcl::PointXY pnt;
   pnt.x = p(0);
@@ -166,7 +223,7 @@ std::vector<int> MapPointNormal::GetClosestIdx(const Eigen::Vector3d&  p, double
   return pointIdxNKNSearchs;
 }
 
-std::vector<cell*> MapPointNormal::GetClosest(Eigen::Vector3d&  p, double d){
+std::vector<cell*> MapPointNormal::GetClosest(Eigen::Vector2d&  p, double d){
   std::vector<cell*> nearby;
   std::vector<int> close_idx = GetClosestIdx(p,d);
   for(auto idx : close_idx)
@@ -175,7 +232,7 @@ std::vector<cell*> MapPointNormal::GetClosest(Eigen::Vector3d&  p, double d){
 }
 
 
-void MapPointNormal::ComputeNormals(const Eigen::Vector3d& origin){
+void MapPointNormal::ComputeNormals(const Eigen::Vector2d& origin){
   if(input_->size()==0)
     cerr<<"cloud size error"<<endl;
 
@@ -194,51 +251,28 @@ void MapPointNormal::ComputeNormals(const Eigen::Vector3d& origin){
   if(cell_sample_means.size()<3)
     std::cerr<<"Error, downsampeld cloud empty"<<endl;
 
-  //file_input.open ("/home/daniel/Documents/input.txt");
-  //file_downsampled.open("/home/daniel/Documents/downsampled.txt");
-
-  //pcl::io::savePCDFileASCII("/home/daniel/Documents/input.pcd", *input_);
-  //pcl::io::savePCDFileASCII("/home/daniel/Documents/downsampled.pcd", cell_sample_means);
-
-  //cout<<"input:"<<input_->size()<<endl;
-
-  //cout<<"loop"<<endl;
   std::vector<int> pointIdxNKNSearch;
   std::vector<float> pointNKNSquaredDistance;
   for(int i=0;i<cell_sample_means.size();i++){
-
-
     pointIdxNKNSearch.clear();
     pointNKNSquaredDistance.clear();
-    //cout<<"cleared arrs"<<endl;
     pcl::PointXYZI pnt = cell_sample_means.points[i];
-    //double d = sqrt( pnt.x*pnt.x+pnt.y*pnt.y);
-    //cout<<"got pnt"<<endl;
-    //cout<<pnt.x<<" "<<pnt.y<<" "<<pnt.z<<endl;
 
-    //cout<<"i="<<i<<", "<<pnt.x<<" "<<pnt.y<<" "<<pnt.z<<endl;
-    //cout<<i<<": "<<pnt.x<<","<<pnt.y<<","<<pnt.z<<","<<pnt.intensity<<endl;
-    //cout<<"search"<<endl;
-    //  double r = 2+5*(d/150.0); // 5+0.3m at at 150m
     if ( kdt_input.radiusSearchT (pnt, radius_, pointIdxNKNSearch, pointNKNSquaredDistance) >=6 ){
-      Eigen::Vector3d u;
-      Eigen::Matrix3d cov;
-      //cout<<"compute mean"<<endl;
-      if(ComputeMeanAndNormals(pointIdxNKNSearch, u, cov))
-        cells.push_back(cell(u, cov, origin));
+      cell c = cell(input_, pointIdxNKNSearch, weight_intensity_, origin);
+      if(c.valid_)
+        cells.push_back(c);
     }
   }
-  //cout<<"end of loop"<<endl;
-  //cerr<<"done normals"<<endl;
 }
 
-Eigen::MatrixXd MapPointNormal::GetNormals(){
-  Eigen::MatrixXd normals(3,cells.size());
+/*Eigen::MatrixXd MapPointNormal::GetNormals(){
+  Eigen::MatrixXd normals(2,cells.size());
 
   for(int i=0;i<cells.size();i++)
-    normals.block<3,1>(0,i) = cells[i].snormal_.block<3,1>(0,0);
+    normals.block<2,1>(0,i) = cells[i].snormal_.block<2,1>(0,0);
   return normals;
-}
+}*/
 
 Eigen::MatrixXd MapPointNormal::GetNormals2d(){
   Eigen::MatrixXd normals(2,cells.size());
@@ -248,20 +282,20 @@ Eigen::MatrixXd MapPointNormal::GetNormals2d(){
   return normals;
 }
 
-std::vector<Eigen::Matrix3d> MapPointNormal::GetCovs(){
-  std::vector<Eigen::Matrix3d> covs(cells.size());
+std::vector<Eigen::Matrix2d> MapPointNormal::GetCovs(){
+  std::vector<Eigen::Matrix2d> covs(cells.size());
 
   for(int i=0;i<cells.size();i++)
     covs[i] = cells[i].cov_;
   return covs;
 }
-Eigen::MatrixXd MapPointNormal::GetMeans(){
+/*Eigen::MatrixXd MapPointNormal::GetMeans(){
   Eigen::MatrixXd means(3,cells.size());
 
   for(int i=0;i<cells.size();i++)
     means.block<3,1>(0,i) = cells[i].u_.block<3,1>(0,0);
   return means;
-}
+}*/
 
 Eigen::MatrixXd MapPointNormal::GetMeans2d(){
   Eigen::MatrixXd means(2,cells.size());
@@ -271,13 +305,10 @@ Eigen::MatrixXd MapPointNormal::GetMeans2d(){
   return means;
 }
 
-
-
 Eigen::MatrixXd MapPointNormal::GetCloudTransformed(const Eigen::Affine3d& Toffset){
   Eigen::MatrixXd pnts(3,input_->size());
   for(int i=0; i<input_->size();i++){
-    Eigen::Vector3d v;
-    v<<input_->points[i].x, input_->points[i].y, input_->points[i].z;
+    Eigen::Vector3d v(input_->points[i].x, input_->points[i].y, input_->points[i].z);
     pnts.block<3,1>(0,i) = Toffset*v;
   }
   return pnts;
@@ -290,19 +321,21 @@ Eigen::MatrixXd MapPointNormal::GetScales(){
 }
 std::vector<cell> MapPointNormal::TransformCells(const Eigen::Affine3d& T){
   std::vector<cell> transformed;
+  const Eigen::Affine2d T2d = Eigen::Translation2d(T.translation().topRows<2>()) *
+                 T.linear().topLeftCorner<2,2>();
   for(auto && c : cells){
-    //cout<<"before: "<<c.u_.transpose()<<endl;
-    cell ct = c.TransformCopy(T);
-    //cout<<"after: "<<ct.u_.transpose()<<endl;
+    cell ct = c.TransformCopy(T2d);
     transformed.push_back(ct);
   }
   return transformed;
 }
 void MapPointNormal::Transform(const Eigen::Affine3d& T, Eigen::MatrixXd& means, Eigen::MatrixXd& normals){
-  means = GetMeans();
-  normals = GetNormals();
+  means = GetMeans2d();
+  normals = GetNormals2d();
+  const Eigen::Affine2d T2d = Eigen::Translation2d(T.translation().topRows<2>()) *
+                 T.linear().topLeftCorner<2,2>();
   for(int i=0;i<means.cols();i++)
-    means.block<3,1>(0,i) = T.linear()*means.block<3,1>(0,i)+T.translation();
+    means.block<2,1>(0,i) = T2d.linear()*means.block<2,1>(0,i)+T2d.translation();
   normals = T.linear()*normals;
 }
 
@@ -314,7 +347,7 @@ void MapPointNormal::Transform2d(const Eigen::Affine3d& T, Eigen::MatrixXd& mean
   normals = T.linear().block<2,2>(0,0)*normals;
 }
 
-inline pcl::PointXYZI Pnt(Eigen::Vector3d& u){
+inline pcl::PointXYZI Pnt(Eigen::Vector2d& u){
   pcl::PointXYZI p;
   p.x = u(0);
   p.y = u(1);
@@ -323,11 +356,11 @@ inline pcl::PointXYZI Pnt(Eigen::Vector3d& u){
   return p;
 }
 
-inline pcl::PointXYZ PntXYZ(Eigen::Vector3d& u){
+inline pcl::PointXYZ PntXYZ(Eigen::Vector2d& u){
   pcl::PointXYZ p;
   p.x = u(0);
   p.y = u(1);
-  p.z = u(2);
+  p.z = 0;
   return p;
 }
 
@@ -385,17 +418,18 @@ visualization_msgs::MarkerArray Cells2Markers(std::vector<cell>& cells, const ro
     }
     else
       intToRGB(val, m.color.r, m.color.g, m.color.b);
-    Eigen::Vector3d u = cells[i].u_;
+    Eigen::Vector2d u = cells[i].u_;
     double d = cells[i].scale_;
-    Eigen::Vector3d end = u + 3*cells[i].snormal_;//*d;//+ cells[i].snormal_*log(d/2);
+    //Eigen::Vector2d end = u + 3*cells[i].snormal_;//*d;//+ cells[i].Affine3d*log(d/2);
+    Eigen::Vector2d end = u + cells[i].snormal_*d;
     geometry_msgs::Point p;
     p.x = u(0);
     p.y = u(1);
-    p.z = u(2);
+    p.z = 0;
     m.points.push_back(p);
     p.x = end(0);
     p.y = end(1);
-    p.z = end(2);
+    p.z = 0;
     m.points.push_back(p);
     m.id = i;
     m.ns = "";
@@ -408,12 +442,12 @@ visualization_msgs::MarkerArray Cells2Markers(std::vector<cell>& cells, const ro
   return marr;
 }
 
-cell::cell(const Eigen::Vector3d& u, const Eigen::Matrix3d& cov, const Eigen::Vector3d& origin ) {
+/*cell::cell(const Eigen::Vector2d& u, const Eigen::Matrix2d& cov, const Eigen::Vector2d& origin ) {
 
   Eigen::Matrix2d c = cov.block<2,2>(0,0);
   Eigen::SelfAdjointEigenSolver<Eigen::Matrix2d> es(c);
   es.compute(c);
-  snormal_ = Eigen::Vector3d(0,0,0);
+  snormal_ = Eigen::Vector2d(0,0);
   snormal_.block<2,1>(0,0) = es.eigenvectors().col(0);
   double ratio = es.eigenvalues()[1]/(es.eigenvalues()[0]+0.000001); //regularization shoudn't be needed here if condition number is previously controlled for
   scale_ = log(ratio/2);
@@ -421,39 +455,31 @@ cell::cell(const Eigen::Vector3d& u, const Eigen::Matrix3d& cov, const Eigen::Ve
   u_ = u;
   u_(2) = 0;
   cov_ = cov;
-  Eigen::Vector3d Po_u = origin - u_;
+  Eigen::Vector2d Po_u = origin - u_;
   if(snormal_.dot(Po_u)<0)
     snormal_ = - snormal_;
-}
-cell::cell(const Eigen::Vector3d& u, const Eigen::Matrix3d& cov, const Eigen::Vector3d& normal, const double scale){
-  u_ = u;
-  cov_ = cov;
-  snormal_ = normal;
-  scale_ = scale; // scale already set?
-}
+}*/
 
-cell cell::TransformCopy(const Eigen::Affine3d& T){
-  Eigen::Matrix3d R = T.linear();
-  Eigen::Matrix3d C = R*T*cov_*R.transpose();
-  Eigen::Vector3d N = R*snormal_;
-  Eigen::Vector3d U = T*u_;
+
+cell cell::TransformCopy(const Eigen::Affine2d& T){
+  Eigen::Matrix2d R = T.linear();
+  Eigen::Matrix2d C = R*T*cov_*R.transpose();
+  Eigen::Vector2d N = R*snormal_;
+  Eigen::Vector2d N_orth = R*orth_normal;
+  Eigen::Vector2d U = T*u_;
   //U(2) = std::cos(GetAngle());
-  return cell(U, C, N, scale_);
+  cell c(*this);
+  c.u_ = U;
+  c.cov_ = C;
+  c.snormal_ = N;
+  c.orth_normal = N_orth;
+
+  return c;
 }
 double cell::GetAngle(){
   cout<<"normal: "<<snormal_<<endl;
   double alpha = atan2(snormal_(1), snormal_(0));
   return alpha;
-}
-cell cell::GetDefault(){
-    Eigen::Vector3d normal;
-    normal<<1,0.1,0;
-    Eigen::Matrix3d cov = normal.asDiagonal();
-    cell c(Eigen::Vector3d::Identity(), cov);
-    return c;
-}
-std::pair<Eigen::Vector3d,Eigen::Vector3d> cell::TransformMeanNormal(const Eigen::Affine3d& T){
-  return std::make_pair(T*u_,T*snormal_);
 }
 
 void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eigen::Affine3d& T, const std::string& frame_id, const int value){
@@ -473,25 +499,29 @@ void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eige
   marr_delete.markers.push_back(m);
   it->second.publish(marr_delete);
   std::vector<cell> cells = map->TransformCells(T);
+  for(auto && c : cells){
+    //cout<<"u: "<<c.u_<<
+  }
   visualization_msgs::MarkerArray marr = Cells2Markers(cells, ros::Time::now(), frame_id, value);
   it->second.publish(marr);
 }
 
-/*void cell::ToNDTMsg(std::vector<cellptr>& cells, ndt_map::NDTMapMsg& msg){
+void cell::ToNDTMsg(std::vector<cell>& cells, ndt_map::NDTMapMsg& msg){
 
   std::vector<perception_oru::NDTCell*> ndt_cells;
   for(auto && c : cells){
     perception_oru::NDTCell* ndt_cell = new perception_oru::NDTCell();
-    Eigen::Matrix3d Cov;
-    Cov.block<3,3>(0,0) = c->cov_;
+    Eigen::Matrix3d Cov = Eigen::Matrix3d::Identity();
+    Cov.block<2,2>(0,0) = c.cov_;;
     ndt_cell->setCov(Cov);
-    Eigen::Vector3d u(c->u_(0),c->u_(1), c->u_(2) );
-    ndt_cell->setCenter(pcl::PointXYZ(u(0), u(1), u(2)));
-    ndt_cell->setMean(c->u_);
+    Eigen::Vector3d u(c.u_(0),c.u_(1), 0);
+    ndt_cell->setCenter(pcl::PointXYZ(u(0), u(1), 0));
+    ndt_cell->setMean(u);
     ndt_cell->hasGaussian_ = true;
     ndt_cells.push_back(ndt_cell);
   }
-  perception_oru::toMessage(ndt_cells, msg, "navtech");
-}*/
+  cout<<endl;
+  perception_oru::toMessage(ndt_cells, msg, "sensor_est");
+}
 
 }

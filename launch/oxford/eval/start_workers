@@ -25,7 +25,7 @@ then
 fi
 if [ "$1" = "--visualize" ]
 then
-dir=`rospack find radar_mapping`
+dir=`rospack find cfear_radarodometry`
 rviz_config="${dir}/rviz/eval.rviz"
 rosrun rviz rviz -d ${rviz_config} &
 fi
@@ -56,7 +56,7 @@ done
 sleep 1
 wait
 echo "finished all workers"
-merge_script_path=`rospack find radar_mapping`/launch/oxford/eval/merge_eval.py
+merge_script_path=`rospack find cfear_radarodometry`/launch/oxford/eval/merge_eval.py
 python3  ${merge_script_path} --dir ${STAMPED_OUTPUT_EVAL_DIR}/ --prefix ${EVALUATION_description}_${current_date}
 #cat
 #cat  | ssmtp dla.adolfsson@gmail.com

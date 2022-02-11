@@ -132,25 +132,25 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
     const Eigen::Vector2d trans_diff(parameters.back()[0] - prev_par[0],parameters.back()[1] - prev_par[1]);
     const double rot_diff = fabs(parameters.back()[2] - prev_par[2])*180/M_PI;
 
-    cout<<"trans diff: "<<trans_diff.norm()<<", rot diff: "<<rot_diff<<endl;
+    //cout<<"trans diff: "<<trans_diff.norm()<<", rot diff: "<<rot_diff<<endl;
     if(itr > 1 && (trans_diff.norm() < 0.001 && rot_diff <0.01) ){ // this movement is so small, no need to waste time on details of this level. Could be that the sensor is stationary
-      CFEAR_Radarodometry::timing.Document("no-param-change", 1,true);
+      //CFEAR_Radarodometry::timing.Document("no-param-change", 1);
       break;
     }
 
     if( itr > min_itr){
       if(prev_score < current_score) // potential problem, recover to prev iteration
       {
-        CFEAR_Radarodometry::timing.Document("prev-better", 1,true);
+        //CFEAR_Radarodometry::timing.Document("prev-better", 1);
         parameters.back() = prev_par;
         break;
       }
       else if(rel_improvement < score_tolerance ){
-        CFEAR_Radarodometry::timing.Document("rel-outter-improvement", 1,true);
+        //CFEAR_Radarodometry::timing.Document("rel-outter-improvement", 1);
         break;
       }
       else if(summary_.iterations.back().relative_decrease < score_tolerance  || summary_.iterations.size()==1){ // this is a sign
-        CFEAR_Radarodometry::timing.Document("rel-inner-improvement", 1,true);
+        //CFEAR_Radarodometry::timing.Document("rel-inner-improvement", 1);
         break;
       }
     }
@@ -158,7 +158,7 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
     prev_par = parameters.back();
     //cout<<"build: "<<t2-t1<<", solve: "<<t3-t2<<endl;
   }
-  cout<<"itrs: "<<itr<<endl;
+  //cout<<"itrs: "<<itr<<endl;
   CFEAR_Radarodometry::timing.Document("itrs", (double)itr);
   //cout<<"itrs: "<<itr<<endl;
 

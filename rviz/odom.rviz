@@ -6,10 +6,14 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Grid1
         - /Map - PointCloud21
+        - /Latest scan Pt- PointCloud21
         - /Estimated - Odometry1
         - /Estimated - Odometry1/Shape1
-        - /Ground truth - Odometry1
+        - /Estimated - Odometry1/Covariance1
+        - /Estimated - Odometry1/Covariance1/Position1
+        - /Ground truth - Odometry1/Shape1
       Splitter Ratio: 0.39673104882240295
     Tree Height: 835
   - Class: rviz/Selection
@@ -39,7 +43,7 @@ Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.5
-      Cell Size: 1
+      Cell Size: 3
       Class: rviz/Grid
       Color: 160; 160; 164
       Enabled: true
@@ -53,7 +57,7 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 10
+      Plane Cell Count: 100
       Reference Frame: <Fixed Frame>
       Value: true
     - Alpha: 0.20000000298023224
@@ -68,12 +72,12 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 100
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 0; 0; 0
-      Max Intensity: 136
+      Max Intensity: 135
       Min Color: 255; 255; 255
-      Min Intensity: 70
+      Min Intensity: 61
       Name: Map - PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -85,8 +89,8 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: false
-      Value: true
-    - Alpha: 0.5
+      Value: false
+    - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 10
@@ -103,7 +107,7 @@ Visualization Manager:
       Max Color: 255; 255; 255
       Max Intensity: 136
       Min Color: 0; 0; 0
-      Min Intensity: 70
+      Min Intensity: 60
       Name: Latest scan Pt- PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -130,22 +134,22 @@ Visualization Manager:
         Position:
           Alpha: 0.30000001192092896
           Color: 204; 51; 204
-          Scale: 1
+          Scale: 3
           Value: true
         Value: true
       Enabled: true
       Keep: 100000
       Name: Estimated - Odometry
-      Position Tolerance: 0.30000001192092896
+      Position Tolerance: 0.10000000149011612
       Shape:
         Alpha: 1
         Axes Length: 1
         Axes Radius: 0.10000000149011612
         Color: 255; 25; 0
-        Head Length: 1
+        Head Length: 0.699999988079071
         Head Radius: 1
-        Shaft Length: 1
-        Shaft Radius: 1
+        Shaft Length: 0.699999988079071
+        Shaft Radius: 0.699999988079071
         Value: Arrow
       Topic: /cfear_radarodometry_node/radar_odom
       Unreliable: false
@@ -170,20 +174,37 @@ Visualization Manager:
       Enabled: true
       Keep: 100000
       Name: Ground truth - Odometry
-      Position Tolerance: 0.30000001192092896
+      Position Tolerance: 0.10000000149011612
       Shape:
         Alpha: 1
         Axes Length: 1
         Axes Radius: 0.10000000149011612
         Color: 196; 160; 0
-        Head Length: 1
+        Head Length: 0.699999988079071
         Head Radius: 1
-        Shaft Length: 1
-        Shaft Radius: 1
+        Shaft Length: 0.699999988079071
+        Shaft Radius: 0.699999988079071
         Value: Arrow
       Topic: /gt
       Unreliable: false
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: false
+      Marker Topic: /current_normals
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Alpha: 1
+      Class: ndt_rviz/NDT
+      Color: 204; 51; 204
+      Enabled: false
+      History Length: 1
+      Name: NDT
+      Topic: /ndt_map
+      Unreliable: false
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -212,25 +233,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 146.77764892578125
+      Distance: 133.53167724609375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -21.845060348510742
-        Y: 1.2365732192993164
-        Z: 0
+        X: -12.932111740112305
+        Y: -2.066587448120117
+        Z: 2.9865441319998354e-6
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.3597967624664307
+      Pitch: 1.5297963619232178
       Target Frame: sensor_est
       Value: ThirdPersonFollower (rviz)
-      Yaw: 3.2854018211364746
+      Yaw: 3.0972213745117188
     Saved: ~
 Window Geometry:
   Displays:
@@ -238,7 +259,7 @@ Window Geometry:
   Height: 1025
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000002a3000003cefc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000016000003ce000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f000003cefc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730100000016000003ce000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f0000003efc0100000002fb0000000800540069006d006500000000000000073f000004f300fffffffb0000000800540069006d006501000000000000045000000000000000000000037f000003ce00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000002a3000003cefc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000016000003ce000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f000003cefc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000016000003ce000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f0000003efc0100000002fb0000000800540069006d006500000000000000073f000004f300fffffffb0000000800540069006d0065010000000000000450000000000000000000000494000003ce00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:

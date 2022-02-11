@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
     tf_conversions
     cv_bridge
     image_transport
+    ndt_map
     )
 find_package(OpenMP REQUIRED)
 if(OPENMP_FOUND)
@@ -43,7 +44,7 @@ find_package(Eigen3 REQUIRED COMPONENTS)
 catkin_package(
     INCLUDE_DIRS include
     DEPENDS Eigen3 
-    CATKIN_DEPENDS  roscpp laser_geometry sensor_msgs tf_conversions tf geometry_msgs
+    CATKIN_DEPENDS  roscpp laser_geometry sensor_msgs tf_conversions tf geometry_msgs ndt_map
     LIBRARIES ${PROJECT_NAME}
     )
 

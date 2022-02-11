@@ -18,9 +18,11 @@ EVALUATION_loss_arr12=($EVALUATION_loss)
 EVALUATION_loss_lim_arr13=($EVALUATION_loss_limit)
 EVALUATION_covar_scale_arr14=($EVALUATION_covar_scale)
 EVALUATION_regularization_arr15=($EVALUATION_regularization)
+EVALUATION_weight_intensity_arr16=($EVALUATION_weight_intensity)
 
 
-export EVALUATIONS_PARAMETER_SET_SIZE=$(( ${#EVALUATION_sequence_arr1[@]} * ${#EVALUATION_radar_ccw_arr3[@]} * ${#EVALUATION_soft_constraint_arr4[@]}* ${#EVALUATION_disable_compensate_arr5[@]}* ${#EVALUATION_cost_type_arr6[@]}* ${#EVALUATION_submap_scan_size_arr7[@]}* ${#EVALUATION_registered_min_keyframe_dist_arr8[@]}* ${#EVALUATION_res_arr9[@]}* ${#EVALUATION_kstrong_arr10[@]}* ${#EVALUATION_zmin_arr11[@]}* ${#EVALUATION_loss_arr12[@]}* ${#EVALUATION_loss_lim_arr13[@]}* ${#EVALUATION_covar_scale_arr14[@]}* ${#EVALUATION_regularization_arr15[@]} ))
+
+export EVALUATIONS_PARAMETER_SET_SIZE=$(( ${#EVALUATION_sequence_arr1[@]} * ${#EVALUATION_radar_ccw_arr3[@]} * ${#EVALUATION_soft_constraint_arr4[@]}* ${#EVALUATION_disable_compensate_arr5[@]}* ${#EVALUATION_cost_type_arr6[@]}* ${#EVALUATION_submap_scan_size_arr7[@]}* ${#EVALUATION_registered_min_keyframe_dist_arr8[@]}* ${#EVALUATION_res_arr9[@]}* ${#EVALUATION_kstrong_arr10[@]}* ${#EVALUATION_zmin_arr11[@]}* ${#EVALUATION_loss_arr12[@]}* ${#EVALUATION_loss_lim_arr13[@]}* ${#EVALUATION_covar_scale_arr14[@]}* ${#EVALUATION_regularization_arr15[@]}* ${#EVALUATION_weight_intensity_arr16[@]} ))
 
 export EVAL_PER_WORKER=$((EVALUATIONS_PARAMETER_SET_SIZE / NR_WORKERS))
 #Output folder: ${OUTPUT_FOLDER}
@@ -36,60 +38,63 @@ do
 echo "${seq}"
     for ccw in "${EVALUATION_radar_ccw_arr3[@]}"
     do
-echo "${ccw}"
+    echo "${ccw}"
         for sc in "${EVALUATION_soft_constraint_arr4[@]}"
         do
-echo "${sc}"
+        echo "${sc}"
             for comp in "${EVALUATION_disable_compensate_arr5[@]}"
             do
-echo "${comp}"
+            echo "${comp}"
                 for cost in "${EVALUATION_cost_type_arr6[@]}"
                 do
-echo "${cost}"
+                echo "${cost}"
                     for keyframes in "${EVALUATION_submap_scan_size_arr7[@]}"
                     do
-echo "${keyframes}"
+                    echo "${keyframes}"
                         for dist in "${EVALUATION_registered_min_keyframe_dist_arr8[@]}"
                         do
-echo "${dist}"
+                        echo "${dist}"
                             for res in "${EVALUATION_res_arr9[@]}"
                             do
-echo "${res}"
+                            echo "${res}"
                                 for kstrong in "${EVALUATION_kstrong_arr10[@]}"
                                 do
-echo "${kstrong}"
+                                echo "${kstrong}"
                                     for zmin in "${EVALUATION_zmin_arr11[@]}"
                                     do
-echo "${zmin}"
+                                    echo "${zmin}"
                                         for loss in "${EVALUATION_loss_arr12[@]}"
                                         do
-echo "${loss}"
+                                        echo "${loss}"
                                 	    for loss_lim in "${EVALUATION_loss_lim_arr13[@]}"
                                 	    do
-echo "${loss_lim}"
+                                            echo "${loss_lim}"
 						for cov_scale in "${EVALUATION_covar_scale_arr14[@]}"
                                         	do
-echo "${cov_scale}"
+                                                echo "${cov_scale}"
 	                                	    for regularization in "${EVALUATION_regularization_arr15[@]}"
                                 	    	    do
-echo "${regularization}"
+                                                    echo "${regularization}"
+                                                        for weight_intensity in "${EVALUATION_weight_intensity_arr16[@]}"
+                                                        do
+                                                            echo "${weight_intensity}"
 
-                                    			job_nr=$((job_nr+1))
-                                    			responsible_thread=$((job_nr%$NR_WORKERS +1))
-                                    			if [ "${responsible_thread}" = "${thread_index}" ]
-                                    			then
+                                                            job_nr=$((job_nr+1))
+                                                            responsible_thread=$((job_nr%$NR_WORKERS +1))
+                                                            if [ "${responsible_thread}" = "${thread_index}" ]
+                                                            then
 
-                                        			echo "Worker ${thread_index} job: ${worker_job_nr}/${EVAL_PER_WORKER} (job${job_nr}/${EVALUATIONS_PARAMETER_SET_SIZE})"
-                                        			JOB_FOLDER="${OUTPUT_FOLDER}/job_${job_nr}"
-                                        			worker_job_nr=$((worker_job_nr+1))
-                                        			mkdir -p $JOB_FOLDER
-                                                                ./execute_sequence ${seq} ${JOB_FOLDER} ${ccw} ${sc} ${comp} ${cost} ${keyframes} ${dist} ${res} ${kstrong} ${job_nr} ${zmin} ${loss} ${loss_lim} ${cov_scale} ${regularization} ${PARAMETER_FILE}
-                                        			#kitti_dir=`rospack find kitti-odom-eval`
-                                        			eval="$KITTI_DIR/python/eval_odom.py --dir ${JOB_FOLDER} --align 6dof --force yes"
-                                        			#echo "eval command: $eval"
-                                        			python3 $eval >/dev/null
-
-                                        		fi
+                                                                    echo "Worker ${thread_index} job: ${worker_job_nr}/${EVAL_PER_WORKER} (job${job_nr}/${EVALUATIONS_PARAMETER_SET_SIZE})"
+                                                                    JOB_FOLDER="${OUTPUT_FOLDER}/job_${job_nr}"
+                                                                    worker_job_nr=$((worker_job_nr+1))
+                                                                    mkdir -p $JOB_FOLDER
+                                                                    ./execute_sequence ${seq} ${JOB_FOLDER} ${ccw} ${sc} ${comp} ${cost} ${keyframes} ${dist} ${res} ${kstrong} ${job_nr} ${zmin} ${loss} ${loss_lim} ${cov_scale} ${regularization} ${weight_intensity} ${PARAMETER_FILE}
+                                                                    #kitti_dir=`rospack find kitti-odom-eval`
+                                                                    eval="$KITTI_DIR/python/eval_odom.py --dir ${JOB_FOLDER} --align 6dof --force yes"
+                                                                    #echo "eval command: $eval"
+                                                                    python3 $eval >/dev/null
+                                                            fi
+                                                       done
 						   done
 						done
 					    done
@@ -105,6 +110,4 @@ echo "${regularization}"
     done
 done
 echo "Worker ${thread_index} finished"
-#pars="--sequence SEQUENCE --radar_ccw $3 --soft_constraint $4 --disable_compensate $5 --cost_type $6 --submap_scan_size $7 --registered_min_keyframe_dist $8 --res $9"
-#echo "pars: ${pars}"
-#rosrun radar_mapping offline_odometry  $pars<
+

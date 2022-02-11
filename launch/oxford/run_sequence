@@ -23,7 +23,7 @@ export disable_compensate="false"
 export cost_type="P2P"
 export submap_scan_size="4"
 export registered_min_keyframe_dist="1.5"
-export res="3"
+export res="3.5"
 export kstrong="40"
 export zmin="70"
 export LOSS_TYPE="Huber"
@@ -31,10 +31,11 @@ export LOSS_LIMIT="0.1"
 export COVAR_SCALE="1.228"
 export REGULARIZATION="0.1337"
 export range_res="0.0438"
+export weight_intensity="false"
 
 
 
-pars="--range-res ${range_res} --sequence ${SEQUENCE} --radar_ccw ${radar_ccw} --soft_constraint ${soft_constraint} --disable_compensate ${disable_compensate} --cost_type ${cost_type} --submap_scan_size ${submap_scan_size} --registered_min_keyframe_dist ${registered_min_keyframe_dist} --res ${res} --k_strongest ${kstrong} --bag_path ${BAG_FILE_PATH} --est_directory ${est_dir} --gt_directory ${gt_dir} --job_nr 1 --z-min ${zmin} --loss_type ${LOSS_TYPE} --loss_limit ${LOSS_LIMIT} --regularization ${REGULARIZATION} --covar_scale ${COVAR_SCALE}"
+pars="--range-res ${range_res} --sequence ${SEQUENCE} --radar_ccw ${radar_ccw} --soft_constraint ${soft_constraint} --disable_compensate ${disable_compensate} --cost_type ${cost_type} --submap_scan_size ${submap_scan_size} --registered_min_keyframe_dist ${registered_min_keyframe_dist} --res ${res} --k_strongest ${kstrong} --bag_path ${BAG_FILE_PATH} --est_directory ${est_dir} --gt_directory ${gt_dir} --job_nr 1 --z-min ${zmin} --loss_type ${LOSS_TYPE} --loss_limit ${LOSS_LIMIT} --regularization ${REGULARIZATION} --covar_scale ${COVAR_SCALE} --weight_intensity ${weight_intensity}"
 echo "|||||Estimating odometry with parameters: ${pars}||||"
 roslaunch cfear_radarodometry vis.launch&
 rosrun cfear_radarodometry offline_odometry ${pars} #>/dev/null

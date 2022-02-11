@@ -81,6 +81,7 @@ public:
 
     bool visualize = true;
     int submap_scan_size = 3;
+    bool weight_intensity_ = false;
 
     bool use_guess = true, disable_registration = false, soft_constraint = false;
     bool compensate = true, radar_ccw = false;
@@ -126,6 +127,7 @@ public:
       param_nh.param<double>("loss_limit", loss_limit_, 0.1);
       param_nh.param<double>("covar_scale", covar_scale_, 1);
       param_nh.param<double>("regularization", regularization_, 0);
+      param_nh.param<bool>("weight_intensity", weight_intensity_, false);
     }
     std::string ToString(){
       std::ostringstream stringStream;
@@ -152,6 +154,7 @@ public:
       stringStream << "loss limit, "<<std::to_string(loss_limit_)<<endl;
       stringStream << "covar scale, "<<std::to_string(covar_scale_)<<endl;
       stringStream << "regularization, "<<std::to_string(regularization_)<<endl;
+      stringStream << "weight intensity, "<<std::to_string(weight_intensity_)<<endl;
       return stringStream.str();
     }
   };
@@ -214,8 +217,6 @@ private:
   pcl::PointCloud<pcl::PointXYZI> FormatScanMsg(pcl::PointCloud<pcl::PointXYZI>& cloud_in, Eigen::Affine3d& T);
 
   void AddToReference(PoseScanVector& reference, MapNormalPtr cloud,  const Eigen::Affine3d& T);
-
-  void PlotAssociations( std::vector<MapNormalPtr>& scans, const std::vector<Eigen::Affine3d>& Tscans, const std::map<int_pair,std::vector<int_pair> >&  scan_associations, const ros::Time& t);
 
   void processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud);
 

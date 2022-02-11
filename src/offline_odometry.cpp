@@ -107,6 +107,7 @@ public:
         ros::Duration d = ros::Duration(tnow-tinit);
         static ros::Duration tot(0);
         tot +=d;
+        //usleep(1000*100);
 
         cout<<"Frame: "<<frame<<", dur: "<<d<<", avg: "<<++frame/tot.toSec()<<endl;
       }
@@ -136,13 +137,14 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("help,h", "Help screen")
         ("res", po::value<double>()->default_value(3.5), "res")
         ("range-res", po::value<double>()->default_value(0.0438), "range resolution")
-        ("min_distance", po::value<double>()->default_value(2.5), "range resolution")
-        ("max_distance", po::value<double>()->default_value(20), "range resolution")
+        ("min_distance", po::value<double>()->default_value(2.5), "min sensor distance")
+        ("max_distance", po::value<double>()->default_value(20), "mib sensor distance ")
         ("submap_scan_size", po::value<int>()->default_value(3), "submap_scan_size")
-        ("k_strongest", po::value<int>()->default_value(12), "kstrongest points")
+        ("weight_intensity", po::value<bool>()->default_value(false),"weight_intensity")
+        ("k_strongest", po::value<int>()->default_value(12), "kstrongest points filtering")
         ("job_nr", po::value<int>()->default_value(-1), "jobnr")
         ("registered_min_keyframe_dist", po::value<double>()->default_value(1.5), "registered_min_keyframe_dist")
-        ("z-min", po::value<double>()->default_value(65), "zmin intensity")
+        ("z-min", po::value<double>()->default_value(65), "zmin intensity, expected noise level")
         ("radar_ccw", po::value<bool>()->default_value(false),"radar_ccw")
         ("soft_constraint", po::value<bool>()->default_value(false),"soft_constraint")
         ("savepcd", "save_pcd_files")
@@ -204,7 +206,8 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
       rad_par.range_res = vm["range-res"].as<double>();
     if (vm.count("savepcd"))
       eval_par.save_pcd = true;
-    
+
+    par.weight_intensity_ = vm["weight_intensity"].as<bool>();;
     par.compensate = !vm["disable_compensate"].as<bool>();
     par.soft_constraint= vm["soft_constraint"].as<bool>();
     par.radar_ccw = vm["radar_ccw"].as<bool>();
