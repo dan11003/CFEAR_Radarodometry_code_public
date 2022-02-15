@@ -17,7 +17,7 @@ cell::cell(const pcl::PointCloud<pcl::PointXYZI>::Ptr input, const std::vector<i
 
   sum_intensity_ = w.sum();
   avg_intensity_ = sum_intensity_/Nsamples_;
-  cout<<weight_intensity<<endl;
+//  cout<<weight_intensity<<endl;
   w = w/sum_intensity_; // normalize sum = 1.0
 
   for(Eigen::Index i=0 ; i<Nsamples_ ; i++) // calculate mean by weighting, w sums to one, no need to normalize after
@@ -506,7 +506,7 @@ void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eige
   it->second.publish(marr);
 }
 
-void cell::ToNDTMsg(std::vector<cell>& cells, ndt_map::NDTMapMsg& msg){
+/*void cell::ToNDTMsg(std::vector<cell>& cells, ndt_map::NDTMapMsg& msg){
 
   std::vector<perception_oru::NDTCell*> ndt_cells;
   for(auto && c : cells){
@@ -522,6 +522,6 @@ void cell::ToNDTMsg(std::vector<cell>& cells, ndt_map::NDTMapMsg& msg){
   }
   cout<<endl;
   perception_oru::toMessage(ndt_cells, msg, "sensor_est");
-}
+}*/
 
 }

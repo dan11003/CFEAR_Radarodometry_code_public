@@ -24,9 +24,9 @@
 #include "boost/shared_ptr.hpp"
 #include "tgmath.h"
 #include "cfear_radarodometry/statistics.h"
-#include "ndt_map/NDTMapMsg.h"
-#include "ndt_map/ndt_map.h"
-#include "ndt_map/ndt_conversions.h"
+//#include "ndt_map/NDTMapMsg.h"
+//#include "ndt_map/ndt_map.h"
+//#include "ndt_map/ndt_conversions.h"
 
 
 namespace CFEAR_Radarodometry {
@@ -54,7 +54,7 @@ public:
 
   static cell GetIdentityCell(const Eigen::Vector2d& u, const double intensity) { return cell(u,intensity); } // Use only for raw data
 
-  static void ToNDTMsg(std::vector<cell>& cells, ndt_map::NDTMapMsg& msg);
+  //static void ToNDTMsg(std::vector<cell>& cells, ndt_map::NDTMapMsg& msg);
 
   Eigen::Vector2d u_ = Eigen::Vector2d(0,0);
   Eigen::Matrix2d cov_ = Eigen::Matrix2d::Identity()*0.1;

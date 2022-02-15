@@ -92,6 +92,7 @@ public:
     double loss_limit_ = 0.1;
     double covar_scale_ = 1.0;
     double regularization_ = 0.0;
+    bool publish_tf_ = false;
 
     void GetParametersFromRos( ros::NodeHandle& param_nh){
       param_nh.param<std::string>("input_points_topic", input_points_topic, "/Navtech/Filtered");
@@ -128,7 +129,9 @@ public:
       param_nh.param<double>("covar_scale", covar_scale_, 1);
       param_nh.param<double>("regularization", regularization_, 0);
       param_nh.param<bool>("weight_intensity", weight_intensity_, false);
+      param_nh.param<bool>("publish_tf", publish_tf_, false);
     }
+
     std::string ToString(){
       std::ostringstream stringStream;
       //stringStream << "OdometryKeyframeFuser::Parameters"<<endl;
@@ -155,6 +158,7 @@ public:
       stringStream << "covar scale, "<<std::to_string(covar_scale_)<<endl;
       stringStream << "regularization, "<<std::to_string(regularization_)<<endl;
       stringStream << "weight intensity, "<<std::to_string(weight_intensity_)<<endl;
+      stringStream << "publish_tf, "<<std::to_string(publish_tf_)<<endl;
       return stringStream.str();
     }
   };

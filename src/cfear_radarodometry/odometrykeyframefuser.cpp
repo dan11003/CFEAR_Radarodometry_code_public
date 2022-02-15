@@ -240,23 +240,25 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   nav_msgs::Odometry msg_current = FormatOdomMsg(Tcurrent, Tmot, t, cov_vek.back());
   pubsrc_cloud_latest.publish(cld_latest);
   pose_current_publisher.publish(msg_current);
-  geometry_msgs::TransformStamped transformStamped;
-  transformStamped.header.stamp = msg_current.header.stamp;
-  transformStamped.header.frame_id = msg_current.header.frame_id;
+  if(par.publish_tf_){
+     geometry_msgs::TransformStamped transformStamped;
+     transformStamped.header.stamp = msg_current.header.stamp;
+     transformStamped.header.frame_id = msg_current.header.frame_id;
 
-  tf::Transform Tf;
-  std::vector<tf::StampedTransform> trans_vek;
-  tf::transformEigenToTF(Tcurrent, Tf);
-  trans_vek.push_back(tf::StampedTransform(Tf, t, par.odometry_link_id, "sensor_est"));
-  trans_vek.push_back(tf::StampedTransform(Tf, t, par.odometry_link_id, "base_link"));
-  Tbr.sendTransform(trans_vek);
+     tf::Transform Tf;
+     std::vector<tf::StampedTransform> trans_vek;
+     tf::transformEigenToTF(Tcurrent, Tf);
+     trans_vek.push_back(tf::StampedTransform(Tf, t, par.odometry_link_id, "sensor_est"));
+     trans_vek.push_back(tf::StampedTransform(Tf, t, par.odometry_link_id, "base_link"));
+     Tbr.sendTransform(trans_vek);
+  }
 
   const Eigen::Affine3d Tkeydiff = keyframes_.back().first.inverse()*Tcurrent;
   bool fuse = KeyFrameBasedFuse(Tkeydiff, par.use_keyframe, par.min_keyframe_dist_, par.min_keyframe_rot_deg_);
 
   CFEAR_Radarodometry::timing.Document("velocity", Tmot.translation().norm()/Tsensor);
 
-  ndt_map::NDTMapMsg msg_ndt;
+/*  ndt_map::NDTMapMsg msg_ndt;
   //static void ToNDTMsg(std::vector<cellptr>& cells, ndt_map::NDTMapMsg& msg);
   //auto cells = Pcurrent->TransformCells(Tcurrent);
 
@@ -265,7 +267,7 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   msg_ndt.header.stamp = t;
   msg_ndt.header.frame_id = "sensor_est";
   static ros::Publisher pub_map = nh_.advertise<ndt_map::NDTMapMsg>("/ndt_map",100);
-  pub_map.publish(msg_ndt);
+  pub_map.publish(msg_ndt);*/
 
   if(success && fuse){
     distance_traveled += Tkeydiff.translation().norm();

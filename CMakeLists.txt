@@ -7,7 +7,9 @@ set(CMAKE_BUILD_TYPE release)
 if("$ENV{ROS_DISTRO}" STREQUAL "indigo")
 add_definitions(-std=c++14)
 endif()
-
+## If pcl not found
+set(PCL_DIR "/usr/lib/x86_64-linux-gnu/cmake/pcl/")
+find_package(PCL  REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
     geometry_msgs
@@ -23,7 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
     tf_conversions
     cv_bridge
     image_transport
-    ndt_map
+    #ndt_map
     )
 find_package(OpenMP REQUIRED)
 if(OPENMP_FOUND)
@@ -34,17 +36,17 @@ endif()
 #set(DCMAKE_CXX_FLAGS "-Werror -Wall -Wextra")
 
 find_package(Ceres REQUIRED)
-find_package(PCL 1.7 REQUIRED)
+find_package(PCL 1.0 REQUIRED)
 find_package(PCL REQUIRED)
 add_definitions(${PCL_DEFINITIONS})
 
 #find_package(cmake_modules REQUIRED)
-find_package(Eigen3 REQUIRED COMPONENTS)
-
+find_package(Eigen3 REQUIRED NO_MODULE)
+ 
 catkin_package(
     INCLUDE_DIRS include
     DEPENDS Eigen3 
-    CATKIN_DEPENDS  roscpp laser_geometry sensor_msgs tf_conversions tf geometry_msgs ndt_map
+    CATKIN_DEPENDS  roscpp laser_geometry sensor_msgs tf_conversions tf geometry_msgs# ndt_map
     LIBRARIES ${PROJECT_NAME}
     )
 

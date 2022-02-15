@@ -4,7 +4,7 @@ killall rviz
 #SEQUENCE="2019-01-16-11-53-11-radar-oxford-10k" #
 SEQUENCE="2019-01-10-12-32-52-radar-oxford-10k"
 current_date=`date '+%Y-%m-%d_%H:%M'`
-BAG_BASE_PATH="/home/$USER/rosbag/oxford-eval-sequences" #Change this to the directory where you have the bag files
+BAG_BASE_PATH="/${BAG_LOCATION}/oxford-eval-sequences" #Change this to the directory where you have the bag files
 BAG_FILE_PATH="${BAG_BASE_PATH}/${SEQUENCE}/radar/${SEQUENCE}.bag"
 echo "${BAG_FILE_PATH}"
 EVAL_BASE_DIR="${BAG_BASE_PATH}/eval/${current_date}"
@@ -20,18 +20,18 @@ mkdir -p "${gt_dir}"
 export radar_ccw="false"
 export soft_constraint="false"
 export disable_compensate="false"
-export cost_type="P2P"
-export submap_scan_size="4"
+export cost_type="P2L"
+export submap_scan_size="1"
 export registered_min_keyframe_dist="1.5"
 export res="3.5"
-export kstrong="40"
+export kstrong="12"
 export zmin="70"
 export LOSS_TYPE="Huber"
 export LOSS_LIMIT="0.1"
 export COVAR_SCALE="1.228"
 export REGULARIZATION="0.1337"
 export range_res="0.0438"
-export weight_intensity="false"
+export weight_intensity="true"
 
 
 

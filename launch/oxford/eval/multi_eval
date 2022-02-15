@@ -1,10 +1,10 @@
 #!/bin/bash
-#./start_workers "params/oxford_cfear-1"
-#./start_workers "params/oxford_cfear-2"
-./start_workers "params/oxford_cfear-3"
-#./start_workers "params/oxford_cfear-3-loss"
-#./start_workers "params/oxford_cfear-2-d2d"
+./start_workers "params/final/oxford_cfear-1"
+./start_workers "params/final/oxford_cfear-2"
+./start_workers "params/final/oxford_cfear-3"
+./start_workers "params/final/oxford_cfear-3-p2l"
 
-#./start_workers "params/mulran_cfear-1"
-#./start_workers "params/mulran_cfear-2"
-#./start_workers "params/mulran_cfear-3"
+./start_workers "params/final/mulran_cfear-1"
+./start_workers "params/final/mulran_cfear-2"
+./start_workers "params/final/mulran_cfear-3"
+./start_workers "params/final/mulran_cfear-3-p2l"

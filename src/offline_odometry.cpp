@@ -231,7 +231,7 @@ int main(int argc, char **argv)
 
   std::ofstream ofs_before(eval_pars.est_output_dir+std::string("../pars.txt")); // Write
   std::string par_str_before = rad_pars.ToString()+odom_pars.ToString()+eval_pars.ToString()+"nr_frames, "+std::to_string(0)+"\n"+CFEAR_Radarodometry::timing.GetStatistics();
-  cout<< par_str_before<<endl;
+  cout<<"Odometry parameters:\n" << par_str_before<<endl;
   ofs_before<<par_str_before<<endl;
   ofs_before.close();
 

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-export EVAL_OUTPUT_BASE_PATH="/home/daniel/rosbag/oxford-eval-sequences/eval"
+export EVAL_OUTPUT_BASE_PATH="${BAG_LOCATION}/oxford-eval-sequences/eval"
 #export EVAL_OUTPUT_BASE_PATH="/home/daniel/rosbag/Mulran/eval"
 #export BAG_BASE_PATH="/home/daniel/rosbag/Mulran"
-export BAG_BASE_PATH="/home/daniel/rosbag/oxford-eval-sequences"
+export BAG_BASE_PATH="${BAG_LOCATION}/oxford-eval-sequences"
 export EVAL_DATASET="oxford"
 export NR_WORKERS="1"
 #export NR_WORKERS="1"

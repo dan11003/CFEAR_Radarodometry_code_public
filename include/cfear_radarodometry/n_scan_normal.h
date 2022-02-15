@@ -55,7 +55,7 @@ public:
 
   double getScore(){return score_;}
 
-  double SetD2dPar(const double cov_scale,const double regularization){cov_scale_ = cov_scale; regularization_ = regularization;}
+  void SetD2dPar(const double cov_scale,const double regularization){cov_scale_ = cov_scale; regularization_ = regularization;}
 
   void AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr& src_local, const Eigen::Affine2d& Ttar, const Eigen::Affine2d& Tsrc, const size_t scan_idx_tar, const size_t scan_idx_src);
 
