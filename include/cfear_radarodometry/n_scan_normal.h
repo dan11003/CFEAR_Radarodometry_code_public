@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "pcl/io/pcd_io.h"
 #include "pcl_ros/point_cloud.h"
 #include "pcl_ros/publisher.h"
@@ -77,21 +77,14 @@ private:
   double regularization_ = 0.01;
   const double score_tolerance = 0.00001;
   const double max_itr = 8, min_itr = 2;
+  const bool efficient_implementation = true;
 
 };
 
+class RegistrationCost{
+  protected:
 
-
-class scan_pair_2dnorm_error {
-public:
-
-  scan_pair_2dnorm_error (const Eigen::Vector2d& target_mean, const Eigen::Vector2d& target_normal, const Eigen::Vector2d& src_mean , const Eigen::Vector2d& src_normal, const double scale_similarity){
-    tar_mean_ = target_mean;
-    tar_normal_ = target_normal;
-    src_mean_ = src_mean;
-    src_normal_ = src_normal;
-    scale_similarity_ = scale_similarity;
-  }
+  RegistrationCost () {}
 
   template <typename T>
   static Eigen::Matrix<T, 2, 2> GetRotMatrix2D(const T* par){
@@ -109,110 +102,113 @@ public:
     trans << par[0], par[1];
     return trans;
   }
+};
+
+class P2LCost : public RegistrationCost{
+public:
+
+  P2LCost (const Eigen::Vector2d& target_mean, const Eigen::Vector2d& target_normal, const Eigen::Vector2d& src_mean, const double weight) :
+    tar_mean_(target_mean),
+    tar_normal_(target_normal),
+    src_mean_(src_mean),
+    weight_(weight) {}
 
   template <typename T>
   bool operator()(const T*  Ta,
                   const T*  Tb,
                   T* residuals_ptr) const {
-    Eigen::Matrix<T,2,1> trans_mat_tar = GetTransMatrix2D(Ta);
-    Eigen::Matrix<T,2,2> rot_mat_tar = GetRotMatrix2D(Ta);
+    const Eigen::Matrix<T,2,1> trans_mat_tar = GetTransMatrix2D(Ta);
+    const Eigen::Matrix<T,2,2> rot_mat_tar = GetRotMatrix2D(Ta);
 
-    Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Tb);
-    Eigen::Matrix<T,2,2> rot_mat_src = GetRotMatrix2D(Tb);
+    const Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Tb);
+    const Eigen::Matrix<T,2,2> rot_mat_src = GetRotMatrix2D(Tb);
 
-    Eigen::Matrix<T,2,1> transformed_mean_tar = (rot_mat_tar * (tar_mean_).cast<T>()) + trans_mat_tar;
-    Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * (src_mean_).cast<T>()) + trans_mat_src;
+    const Eigen::Matrix<T,2,1> transformed_mean_tar = (rot_mat_tar * (tar_mean_).cast<T>()) + trans_mat_tar;
+    const Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * (src_mean_).cast<T>()) + trans_mat_src;
 
-    Eigen::Matrix<T,2,1> transformed_normal_tar = (rot_mat_tar * (tar_normal_).cast<T>());
-    Eigen::Matrix<T,2,1> transformed_normal_src = (rot_mat_src * (src_normal_).cast<T>());
+    const Eigen::Matrix<T,2,1> transformed_normal_tar = (rot_mat_tar * (tar_normal_).cast<T>());
+
     //T cost = T(0.0);
-    Eigen::Matrix<T,2,1> v = transformed_mean_src - transformed_mean_tar;
+    const Eigen::Matrix<T,2,1> v = transformed_mean_src - transformed_mean_tar;
 
-    Eigen::Matrix<T,2,1> n = transformed_normal_tar;
+    const Eigen::Matrix<T,2,1> n = transformed_normal_tar;
 
-
-    //residuals_ptr[0] = /*T(scale_similarity_)**/ v.dot(n);   // if scale similarity is different, then simply consider it less as the data association is inaccurate
     residuals_ptr[0] = v.dot(n);
-    //residuals_ptr[0] = T(scale_similarity_)*(transformed_mean_src-transformed_mean_tar).norm();
     return true;
   }
 
-
-  static double  Evalp2l(const double*  Ta,
-                         const double*  Tb,
-                         const Eigen::Vector2d& tar_mean,
-                         const Eigen::Vector2d& tar_normal,
-                         const Eigen::Vector2d& src_mean) {
-    Eigen::Matrix<double,2,1> trans_mat_tar = GetTransMatrix2D(Ta);
-    Eigen::Matrix<double,2,2> rot_mat_tar = GetRotMatrix2D(Ta);
-
-    Eigen::Matrix<double,2,1> trans_mat_src = GetTransMatrix2D(Tb);
-    Eigen::Matrix<double,2,2> rot_mat_src = GetRotMatrix2D(Tb);
-
-    Eigen::Matrix<double,2,1> transformed_mean_tar = rot_mat_tar * tar_mean + trans_mat_tar;
-    Eigen::Matrix<double,2,1> transformed_mean_src = rot_mat_src * src_mean + trans_mat_src;
-
-    Eigen::Matrix<double,2,1> transformed_normal_tar = rot_mat_tar * tar_normal;
-
-    Eigen::Matrix<double,2,1> v = transformed_mean_src - transformed_mean_tar;
-
-    Eigen::Matrix<double,2,1> n = transformed_normal_tar;
-    return v.dot(n);
-  }
-
   static ceres::CostFunction* Create(
-      const Eigen::Vector2d& target_mean, const Eigen::Vector2d& target_normal, const Eigen::Vector2d& src_mean , const Eigen::Vector2d& src_normal, double scale_similarity) {
-    return new ceres::AutoDiffCostFunction<scan_pair_2dnorm_error ,1, 3, 3>(new scan_pair_2dnorm_error (target_mean, target_normal, src_mean, src_normal, scale_similarity));
+      const Eigen::Vector2d& target_mean, const Eigen::Vector2d& target_normal, const Eigen::Vector2d& src_mean, double scale_similarity) {
+    return new ceres::AutoDiffCostFunction<P2LCost ,1, 3, 3>(new P2LCost (target_mean, target_normal, src_mean, scale_similarity));
   }
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
 
-    Eigen::Vector2d tar_mean_;
-  Eigen::Vector2d tar_normal_;
-  Eigen::Vector2d src_mean_;
-  Eigen::Vector2d src_normal_;
-  double scale_similarity_;
+  const Eigen::Vector2d tar_mean_;
+  const Eigen::Vector2d tar_normal_;
+  const Eigen::Vector2d src_mean_;
+  const double weight_;
 };
 
 
-class Point2DistError {
+// reference precomputed
+class P2LEfficientCost : public RegistrationCost{
 public:
 
-  Point2DistError (const Eigen::Vector2d& target_mean, const Eigen::Matrix2d& tar_sqrt_information, const Eigen::Vector2d& src_mean){
-    tar_mean_ = target_mean;
-    tar_sqrt_information_  = tar_sqrt_information;
-    src_mean_ = src_mean;
-  }
+  P2LEfficientCost (const Eigen::Vector2d& transformed_mean_tar, const Eigen::Vector2d& transformed_normal_tar, const Eigen::Vector2d& src_mean, double weight) :
+    transformed_mean_tar_(transformed_mean_tar),
+    transformed_normal_tar_(transformed_normal_tar),
+    src_mean_(src_mean),
+    weight_(weight)  {}
 
   template <typename T>
-  static Eigen::Matrix<T, 2, 2> GetRotMatrix2D(const T* par){
-    T cos_yaw = ceres::cos(par[2]);
-    T sin_yaw = ceres::sin(par[2]);
-    Eigen::Matrix<T, 2, 2> rotation;
-    rotation << cos_yaw,  -sin_yaw,
-        sin_yaw,  cos_yaw;
-    return rotation;
+  bool operator()(const T*  Tb,
+                  T* residuals_ptr) const {
+
+    const Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Tb);
+    const Eigen::Matrix<T,2,2> rot_mat_src = GetRotMatrix2D(Tb);
+
+    const Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * (src_mean_).cast<T>()) + trans_mat_src;
+    const Eigen::Matrix<T,2,1> v = transformed_mean_src - transformed_mean_tar_.cast<T>();
+    const Eigen::Matrix<T,2,1> n = transformed_normal_tar_.cast<T>();
+    residuals_ptr[0] = v.dot(n);
+    return true;
   }
 
-  template <typename T>
-  static Eigen::Matrix<T, 2, 1> GetTransMatrix2D(const T*  par) {
-    Eigen::Matrix<T, 2, 1> trans;
-    trans << par[0], par[1];
-    return trans;
+  static ceres::CostFunction* Create(
+      const Eigen::Vector2d& transformed_mean_tar, const Eigen::Vector2d& transformed_normal_tar, const Eigen::Vector2d& src_mean, double weight) {
+    return new ceres::AutoDiffCostFunction<P2LEfficientCost ,1, 3>(new P2LEfficientCost (transformed_mean_tar, transformed_normal_tar, src_mean, weight));
   }
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  private:
+
+  const Eigen::Vector2d transformed_mean_tar_;
+  const Eigen::Vector2d transformed_normal_tar_;
+  const Eigen::Vector2d src_mean_;
+  const double weight_;
+};
+
+
+class P2DCost : public RegistrationCost{
+public:
+
+  P2DCost (const Eigen::Vector2d& target_mean, const Eigen::Matrix2d& tar_sqrt_information, const Eigen::Vector2d& src_mean) :
+    tar_mean_(target_mean),
+    tar_sqrt_information_(tar_sqrt_information),
+    src_mean_(src_mean) {}
 
   template <typename T>
   bool operator()(const T*  Ta,
                   const T*  Tb,
                   T* residuals_ptr) const {
-    Eigen::Matrix<T,2,1> trans_mat_tar = GetTransMatrix2D(Ta);
-    Eigen::Matrix<T,2,2> rot_mat_tar = GetRotMatrix2D(Ta);
+    const Eigen::Matrix<T,2,1> trans_mat_tar = GetTransMatrix2D(Ta);
+    const Eigen::Matrix<T,2,2> rot_mat_tar = GetRotMatrix2D(Ta);
 
-    Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Tb);
-    Eigen::Matrix<T,2,2> rot_mat_src = GetRotMatrix2D(Tb);
+    const Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Tb);
+    const Eigen::Matrix<T,2,2> rot_mat_src = GetRotMatrix2D(Tb);
 
-    Eigen::Matrix<T,2,1> transformed_mean_tar = (rot_mat_tar * (tar_mean_).cast<T>()) + trans_mat_tar;
-    Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * (src_mean_).cast<T>()) + trans_mat_src;
+    const Eigen::Matrix<T,2,1> transformed_mean_tar = (rot_mat_tar * (tar_mean_).cast<T>()) + trans_mat_tar;
+    const Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * (src_mean_).cast<T>()) + trans_mat_src;
 
 
     //residuals_ptr[0] = /*T(scale_similarity_)**/ v.dot(n);   // if scale similarity is different, then simply consider it less as the data association is inaccurate
@@ -224,14 +220,14 @@ public:
 
   static ceres::CostFunction* Create(
       const Eigen::Vector2d& target_mean, const Eigen::Matrix2d& tar_sqrt_information, const Eigen::Vector2d& src_mean) {
-    return new ceres::AutoDiffCostFunction<Point2DistError ,2, 3, 3>(new Point2DistError (target_mean, tar_sqrt_information, src_mean));
+    return new ceres::AutoDiffCostFunction<P2DCost ,2, 3, 3>(new P2DCost (target_mean, tar_sqrt_information, src_mean));
   }
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
 
-    Eigen::Vector2d tar_mean_;
-  Eigen::Matrix2d tar_sqrt_information_;
-  Eigen::Vector2d src_mean_;
+  const Eigen::Vector2d tar_mean_;
+  const Eigen::Matrix2d tar_sqrt_information_;
+  const Eigen::Vector2d src_mean_;
 };
 
 
@@ -239,13 +235,7 @@ public:
 class mahalanobisDistanceError {
 public:
 
-  mahalanobisDistanceError (const Eigen::Vector3d& target_mean, const Eigen::Matrix3d& tar_sqrt_information, const double alpha){
-    tar_mean_ = target_mean;
-    tar_sqrt_information_  = tar_sqrt_information;
-    alpha_ = alpha;
-  }
-
-
+  mahalanobisDistanceError (const Eigen::Vector3d& target_mean, const Eigen::Matrix3d& tar_sqrt_information, const double alpha) : tar_mean_(target_mean), tar_sqrt_information_(tar_sqrt_information), alpha_(alpha) {}
 
   template <typename T>
   static Eigen::Matrix<T, 3, 1> GetVector(const T*  par) {
@@ -270,49 +260,29 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
 
-    Eigen::Vector3d tar_mean_;
+  Eigen::Vector3d tar_mean_;
   Eigen::Matrix3d tar_sqrt_information_;
   double alpha_;
 };
 
 
-class icp_error {
+class P2PCost : public RegistrationCost{
 public:
 
-  icp_error (const Eigen::Vector2d& target_mean, const Eigen::Vector2d& src_mean){
-    tar_mean_ = target_mean;
-    src_mean_ = src_mean;
-  }
-
-  template <typename T>
-  Eigen::Matrix<T, 2, 2> GetRotMatrix2D(const T* par)const{
-    T cos_yaw = ceres::cos(par[2]);
-    T sin_yaw = ceres::sin(par[2]);
-    Eigen::Matrix<T, 2, 2> rotation;
-    rotation << cos_yaw,  -sin_yaw,
-        sin_yaw,  cos_yaw;
-    return rotation;
-  }
-
-  template <typename T>
-  Eigen::Matrix<T, 2, 1> GetTransMatrix2D(const T*  par)const {
-    Eigen::Matrix<T, 2, 1> trans;
-    trans << par[0], par[1];
-    return trans;
-  }
+  P2PCost (const Eigen::Vector2d& target_mean, const Eigen::Vector2d& src_mean) : tar_mean_(target_mean), src_mean_(src_mean) {}
 
   template <typename T>
   bool operator()(const T*  Ta,
                   const T*  Tb,
                   T* residuals_ptr) const {
-    Eigen::Matrix<T,2,1> trans_mat_tar = GetTransMatrix2D(Ta);
-    Eigen::Matrix<T,2,2> rot_mat_tar = GetRotMatrix2D(Ta);
+    const Eigen::Matrix<T,2,1> trans_mat_tar = GetTransMatrix2D(Ta);
+    const Eigen::Matrix<T,2,2> rot_mat_tar = GetRotMatrix2D(Ta);
 
-    Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Tb);
-    Eigen::Matrix<T,2,2> rot_mat_src = GetRotMatrix2D(Tb);
+    const Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Tb);
+    const Eigen::Matrix<T,2,2> rot_mat_src = GetRotMatrix2D(Tb);
 
-    Eigen::Matrix<T,2,1> transformed_mean_tar = (rot_mat_tar * (tar_mean_).cast<T>()) + trans_mat_tar;
-    Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * (src_mean_).cast<T>()) + trans_mat_src;
+    const Eigen::Matrix<T,2,1> transformed_mean_tar = (rot_mat_tar * (tar_mean_).cast<T>()) + trans_mat_tar;
+    const Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * (src_mean_).cast<T>()) + trans_mat_src;
 
     //residuals_ptr[0] = /*T(scale_similarity_)**/ v.dot(n);   // if scale similarity is different, then simply consider it less as the data association is inaccurate
     residuals_ptr[0] = transformed_mean_tar(0) - transformed_mean_src(0);
@@ -323,12 +293,46 @@ public:
 
   static ceres::CostFunction* Create(
       const Eigen::Vector2d& target_mean, const Eigen::Vector2d& src_mean) {
-    return new ceres::AutoDiffCostFunction<icp_error ,2, 3, 3>(new icp_error (target_mean, src_mean));
+    return new ceres::AutoDiffCostFunction<P2PCost ,2, 3, 3>(new P2PCost (target_mean, src_mean));
   }
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
 
-    Eigen::Vector2d tar_mean_;
-  Eigen::Vector2d src_mean_;
+  const Eigen::Vector2d tar_mean_, src_mean_;
+
 };
+
+
+class P2PEfficientCost : public RegistrationCost{
+public:
+
+  P2PEfficientCost (const Eigen::Vector2d& tar_transformed, const Eigen::Vector2d& src_mean) : tar_transformed_(tar_transformed), src_mean_(src_mean) {}
+
+  template <typename T>
+  bool operator()(const T*  Tb,
+                  T* residuals_ptr) const {
+
+    const Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Tb);
+    const Eigen::Matrix<T,2,2> rot_mat_src = GetRotMatrix2D(Tb);
+
+    const Eigen::Matrix<T,2,1> transformed_mean_tar = tar_transformed_.cast<T>();
+    const Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * (src_mean_).cast<T>()) + trans_mat_src;
+
+    //residuals_ptr[0] = /*T(scale_similarity_)**/ v.dot(n);   // if scale similarity is different, then simply consider it less as the data association is inaccurate
+    residuals_ptr[0] = transformed_mean_tar(0) - transformed_mean_src(0);
+    residuals_ptr[1] = transformed_mean_tar(1) - transformed_mean_src(1);
+    //residuals_ptr[0] = T(scale_similarity_)*(transformed_mean_src-transformed_mean_tar).norm();
+    return true;
+  }
+
+  static ceres::CostFunction* Create(
+      const Eigen::Vector2d& target_mean, const Eigen::Vector2d& src_mean) {
+    return new ceres::AutoDiffCostFunction<P2PEfficientCost,2, 3>(new P2PEfficientCost (target_mean, src_mean));
+  }
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  private:
+
+  const Eigen::Vector2d tar_transformed_, src_mean_;
+};
+
 }

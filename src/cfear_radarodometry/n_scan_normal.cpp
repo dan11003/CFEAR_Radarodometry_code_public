@@ -276,8 +276,12 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
       const Eigen::Vector2d src_normal = src_local->GetNormal2d(ass_src_idx);
       Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(ass_src_idx);// src.block<2,1>(0,src_idx);
       const Eigen::Vector2d tar_normal = target_local->GetNormal2d(ass_tar_idx);
-      double sim = fabs(src_normal_trans.dot(tar_normal));
-      cost_function = scan_pair_2dnorm_error::Create(tar_mean, tar_normal, src_mean, src_normal, sim);
+      //double similarity_weight = fabs(src_normal_trans.dot(tar_normal));
+      if(efficient_implementation)
+        cost_function = P2LEfficientCost::Create(Ttar*tar_mean, Ttar.linear()*tar_normal, src_mean, 1.0);
+      else {
+        cost_function = P2LCost::Create(tar_mean, tar_normal, src_mean, 1.0);
+      }
     }
     else if( cost_ == cost_metric::P2D){
       Eigen::Matrix2d reg_mat;
@@ -285,13 +289,20 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
       const Eigen::Matrix2d tar_cov = (reg_mat + Ttar.linear()*target_local->GetCov2d(ass_tar_idx)*Ttar.linear().transpose())*cov_scale_ ;
       //cout<<"tar_cov: "<<tar_cov<<endl;
       const Eigen::Matrix2d sqrt_information = tar_cov.inverse().llt().matrixL();
-      cost_function = Point2DistError::Create(tar_mean, sqrt_information , src_mean);
+      cost_function = P2DCost::Create(tar_mean, sqrt_information , src_mean);
     }
     else{
       //double scale_similarity = 1-fabs(src_scales(0,ass_src_idx)-tar_scales(0,ass_tar_idx))/(src_scales(0,ass_src_idx)+tar_scales(0,ass_tar_idx));
-      cost_function = icp_error::Create(tar_mean, src_mean);
+      if(efficient_implementation){
+        cost_function = P2PEfficientCost::Create(Ttar*tar_mean, src_mean);
+      }
+      else
+        cost_function = P2PCost::Create(tar_mean, src_mean);
     }
-    problem_->AddResidualBlock(cost_function, ceres_loss, parameters[scan_idx_tar].data(), parameters[scan_idx_src].data());
+    if(efficient_implementation)
+      problem_->AddResidualBlock(cost_function, ceres_loss, parameters[scan_idx_src].data());
+    else
+      problem_->AddResidualBlock(cost_function, ceres_loss, parameters[scan_idx_tar].data(), parameters[scan_idx_src].data());
   }
   /*std::vector<double> residuals;
         for(int i=0 ; i<associations.size() ; i++){

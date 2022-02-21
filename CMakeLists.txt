@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+    cmake_minimum_required(VERSION 2.8.3)
 project(cfear_radarodometry)
 set (CMAKE_CXX_STANDARD 14)
 set(CMAKE_BUILD_TYPE release)
@@ -44,7 +44,7 @@ find_package(Eigen3 REQUIRED COMPONENTS)
 catkin_package(
     INCLUDE_DIRS include
     DEPENDS Eigen3 
-    CATKIN_DEPENDS  roscpp laser_geometry sensor_msgs tf_conversions tf geometry_msgs ndt_map
+    CATKIN_DEPENDS roscpp laser_geometry sensor_msgs tf_conversions tf geometry_msgs ndt_map
     LIBRARIES ${PROJECT_NAME}
     )
 

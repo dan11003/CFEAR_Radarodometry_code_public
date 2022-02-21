@@ -17,7 +17,7 @@ cell::cell(const pcl::PointCloud<pcl::PointXYZI>::Ptr input, const std::vector<i
 
   sum_intensity_ = w.sum();
   avg_intensity_ = sum_intensity_/Nsamples_;
-  cout<<weight_intensity<<endl;
+  //cout<<weight_intensity<<endl;
   w = w/sum_intensity_; // normalize sum = 1.0
 
   for(Eigen::Index i=0 ; i<Nsamples_ ; i++) // calculate mean by weighting, w sums to one, no need to normalize after
