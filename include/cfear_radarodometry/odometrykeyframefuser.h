@@ -32,7 +32,7 @@
 
 //s#include "fuzzy_msgs/Registration.h"
 #include <geometry_msgs/Transform.h>
-#include "cfear_radarodometry/intensity_utils.h"
+#include "cfear_radarodometry/utils.h"
 
 #include "cfear_radarodometry/pointnormal.h"
 #include "tf/transform_broadcaster.h"
@@ -92,6 +92,7 @@ public:
     double loss_limit_ = 0.1;
     double covar_scale_ = 1.0;
     double regularization_ = 0.0;
+    bool publish_tf_ = false;
 
     void GetParametersFromRos( ros::NodeHandle& param_nh){
       param_nh.param<std::string>("input_points_topic", input_points_topic, "/Navtech/Filtered");
@@ -128,7 +129,9 @@ public:
       param_nh.param<double>("covar_scale", covar_scale_, 1);
       param_nh.param<double>("regularization", regularization_, 0);
       param_nh.param<bool>("weight_intensity", weight_intensity_, false);
+      param_nh.param<bool>("publish_tf", publish_tf_, false);
     }
+
     std::string ToString(){
       std::ostringstream stringStream;
       //stringStream << "OdometryKeyframeFuser::Parameters"<<endl;
@@ -155,6 +158,7 @@ public:
       stringStream << "covar scale, "<<std::to_string(covar_scale_)<<endl;
       stringStream << "regularization, "<<std::to_string(regularization_)<<endl;
       stringStream << "weight intensity, "<<std::to_string(weight_intensity_)<<endl;
+      stringStream << "publish_tf, "<<std::to_string(publish_tf_)<<endl;
       return stringStream.str();
     }
   };
@@ -191,9 +195,7 @@ public:
 
   void PrintSurface(const std::string& path, const Eigen::MatrixXd& surface);
 
-private:
-
-  void Compensate(pcl::PointCloud<pcl::PointXYZI>& cloud, const Eigen::Affine3d& Tmotion, bool ccw=false);
+private: 
 
   bool AccelerationVelocitySanityCheck(const Eigen::Affine3d& Tmot_prev, const Eigen::Affine3d& Tmot_curr);
 

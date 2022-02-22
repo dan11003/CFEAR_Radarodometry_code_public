@@ -22,9 +22,9 @@ OdometryKeyframeFuser::OdometryKeyframeFuser(const Parameters& pars, bool disabl
   assert(par.res>0.05 && par.submap_scan_size>=1 );
   //radar_reg =
   radar_reg = boost::shared_ptr<CFEAR_Radarodometry::n_scan_normal_reg>(new n_scan_normal_reg(Str2Cost(par.cost_type),
-                                           Str2loss(par.loss_type_),
-                                           par.loss_limit_
-                                           ));
+                                                                                              Str2loss(par.loss_type_),
+                                                                                              par.loss_limit_
+                                                                                              ));
 
   radar_reg->SetD2dPar(par.covar_scale_,par.regularization_);
 
@@ -54,28 +54,6 @@ OdometryKeyframeFuser::OdometryKeyframeFuser(const Parameters& pars, bool disabl
 }*/
 
 
-void OdometryKeyframeFuser::Compensate(pcl::PointCloud<pcl::PointXYZI>& cloud, const Eigen::Affine3d& Tmotion, bool ccw){
-  std::vector<double> vek;
-  CFEAR_Radarodometry::Affine3dToVectorXYeZ(Tmotion, vek);
-  for ( int i=0; i<cloud.size();i++) {
-    pcl::PointXYZI p = cloud.points[i];
-    double a = atan2(p.y,p.x);
-    double d = ((a > 0.00001   ? a : (2*M_PI + a))  / (2*M_PI));
-
-    d = ccw? -(d-0.5) : (d-0.5);
-    Eigen::Vector2d peig(p.x,p.y);
-    Eigen::Matrix2d R = CFEAR_Radarodometry::getScaledRotationMatrix(vek, d).block<2,2>(0,0);
-    Eigen::Vector2d t = CFEAR_Radarodometry::getScaledTranslationVector(vek, d).block<2,1>(0,0);
-    Eigen::Vector2d peig_transformed = R*peig + t;
-    cloud.points[i].x = peig_transformed(0,0);
-    cloud.points[i].y = peig_transformed(1,0);
-
-    //if(i%50==0)
-    //cout<<"t: "<<vek[0]<<" "<<vek[1]<<" "<<vek[2]<<endl;
-
-    //cout<<d<<", ";
-  }
-}
 
 bool OdometryKeyframeFuser::KeyFrameBasedFuse(const Eigen::Affine3d& diff, bool use_keyframe, double min_keyframe_dist, double min_keyframe_rot_deg){
 
@@ -240,23 +218,25 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   nav_msgs::Odometry msg_current = FormatOdomMsg(Tcurrent, Tmot, t, cov_vek.back());
   pubsrc_cloud_latest.publish(cld_latest);
   pose_current_publisher.publish(msg_current);
-  geometry_msgs::TransformStamped transformStamped;
-  transformStamped.header.stamp = msg_current.header.stamp;
-  transformStamped.header.frame_id = msg_current.header.frame_id;
+  if(par.publish_tf_){
+    geometry_msgs::TransformStamped transformStamped;
+    transformStamped.header.stamp = msg_current.header.stamp;
+    transformStamped.header.frame_id = msg_current.header.frame_id;
 
-  tf::Transform Tf;
-  std::vector<tf::StampedTransform> trans_vek;
-  tf::transformEigenToTF(Tcurrent, Tf);
-  trans_vek.push_back(tf::StampedTransform(Tf, t, par.odometry_link_id, "sensor_est"));
-  trans_vek.push_back(tf::StampedTransform(Tf, t, par.odometry_link_id, "base_link"));
-  Tbr.sendTransform(trans_vek);
+    tf::Transform Tf;
+    std::vector<tf::StampedTransform> trans_vek;
+    tf::transformEigenToTF(Tcurrent, Tf);
+    trans_vek.push_back(tf::StampedTransform(Tf, t, par.odometry_link_id, "sensor_est"));
+    trans_vek.push_back(tf::StampedTransform(Tf, t, par.odometry_link_id, "base_link"));
+    Tbr.sendTransform(trans_vek);
+  }
 
   const Eigen::Affine3d Tkeydiff = keyframes_.back().first.inverse()*Tcurrent;
   bool fuse = KeyFrameBasedFuse(Tkeydiff, par.use_keyframe, par.min_keyframe_dist_, par.min_keyframe_rot_deg_);
 
   CFEAR_Radarodometry::timing.Document("velocity", Tmot.translation().norm()/Tsensor);
 
-  ndt_map::NDTMapMsg msg_ndt;
+  /*ndt_map::NDTMapMsg msg_ndt;
   //static void ToNDTMsg(std::vector<cellptr>& cells, ndt_map::NDTMapMsg& msg);
   //auto cells = Pcurrent->TransformCells(Tcurrent);
 
@@ -265,7 +245,7 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   msg_ndt.header.stamp = t;
   msg_ndt.header.frame_id = "sensor_est";
   static ros::Publisher pub_map = nh_.advertise<ndt_map::NDTMapMsg>("/ndt_map",100);
-  pub_map.publish(msg_ndt);
+  pub_map.publish(msg_ndt);*/
 
   if(success && fuse){
     distance_traveled += Tkeydiff.translation().norm();
@@ -315,16 +295,16 @@ void OdometryKeyframeFuser::pointcloudCallback(const pcl::PointCloud<pcl::PointX
 
 void OdometryKeyframeFuser::PrintSurface(const std::string& path, const Eigen::MatrixXd& surface){
   std::ofstream myfile;
-   myfile.open (path);
-   for(int i=0;i<surface.rows();i++){
-     for(int j=0;j<surface.cols();j++){
-       if(j==surface.cols()-1)
-         myfile<<surface(i,j)<<std::endl;
-       else
-         myfile<<surface(i,j)<<" ";
-     }
-   }
-   myfile.close();
+  myfile.open (path);
+  for(int i=0;i<surface.rows();i++){
+    for(int j=0;j<surface.cols();j++){
+      if(j==surface.cols()-1)
+        myfile<<surface(i,j)<<std::endl;
+      else
+        myfile<<surface(i,j)<<" ";
+    }
+  }
+  myfile.close();
 }
 
 

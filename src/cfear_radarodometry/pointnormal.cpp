@@ -17,7 +17,7 @@ cell::cell(const pcl::PointCloud<pcl::PointXYZI>::Ptr input, const std::vector<i
 
   sum_intensity_ = w.sum();
   avg_intensity_ = sum_intensity_/Nsamples_;
-  //cout<<weight_intensity<<endl;
+
   w = w/sum_intensity_; // normalize sum = 1.0
 
   for(Eigen::Index i=0 ; i<Nsamples_ ; i++) // calculate mean by weighting, w sums to one, no need to normalize after
@@ -89,7 +89,7 @@ MapPointNormal::MapPointNormal(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cld, 
   pcl::transformPointCloud(*cld, *input_, T); // transform to new reference frame
 
   const Eigen::Affine2d T2d = Eigen::Translation2d(T.translation().topRows<2>()) *
-                 T.linear().topLeftCorner<2,2>();
+      T.linear().topLeftCorner<2,2>();
   for(auto&& c : cell_orig)
     cells.push_back( c.TransformCopy(T2d) );
 
@@ -106,6 +106,12 @@ MapPointNormal::MapPointNormal(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cld, 
 
 MapNormalPtr MapPointNormal::TransformMap(const Eigen::Affine3d& T){
   return MapNormalPtr( new MapPointNormal(input_, radius_, cells, T) );
+}
+
+double MapPointNormal::GetCellRelTimeStamp(const size_t index, const bool ccw){
+  const double x = cells[index].u_(0);
+  const double y = cells[index].u_(1);
+  return CFEAR_Radarodometry::GetRelTimeStamp(x, y, ccw);
 }
 
 
@@ -322,7 +328,7 @@ Eigen::MatrixXd MapPointNormal::GetScales(){
 std::vector<cell> MapPointNormal::TransformCells(const Eigen::Affine3d& T){
   std::vector<cell> transformed;
   const Eigen::Affine2d T2d = Eigen::Translation2d(T.translation().topRows<2>()) *
-                 T.linear().topLeftCorner<2,2>();
+      T.linear().topLeftCorner<2,2>();
   for(auto && c : cells){
     cell ct = c.TransformCopy(T2d);
     transformed.push_back(ct);
@@ -333,7 +339,7 @@ void MapPointNormal::Transform(const Eigen::Affine3d& T, Eigen::MatrixXd& means,
   means = GetMeans2d();
   normals = GetNormals2d();
   const Eigen::Affine2d T2d = Eigen::Translation2d(T.translation().topRows<2>()) *
-                 T.linear().topLeftCorner<2,2>();
+      T.linear().topLeftCorner<2,2>();
   for(int i=0;i<means.cols();i++)
     means.block<2,1>(0,i) = T2d.linear()*means.block<2,1>(0,i)+T2d.translation();
   normals = T.linear()*normals;
@@ -506,7 +512,7 @@ void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eige
   it->second.publish(marr);
 }
 
-void cell::ToNDTMsg(std::vector<cell>& cells, ndt_map::NDTMapMsg& msg){
+/*void cell::ToNDTMsg(std::vector<cell>& cells, ndt_map::NDTMapMsg& msg){
 
   std::vector<perception_oru::NDTCell*> ndt_cells;
   for(auto && c : cells){
@@ -522,6 +528,6 @@ void cell::ToNDTMsg(std::vector<cell>& cells, ndt_map::NDTMapMsg& msg){
   }
   cout<<endl;
   perception_oru::toMessage(ndt_cells, msg, "sensor_est");
-}
+}*/
 
 }

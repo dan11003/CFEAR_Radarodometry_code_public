@@ -2,42 +2,6 @@
 namespace CFEAR_Radarodometry {
 
 
-cost_metric Str2Cost(const std::string& str){
-  if (str=="P2L")
-    return cost_metric::P2L;
-  else if (str=="P2D")
-    return cost_metric::P2D;
-  else //(str=="P2P")
-    return cost_metric::P2P;
-}
-
-std::string Loss2str(const loss_type& loss){
-  switch (loss){
-  case Huber: return "Huber";
-  case Cauchy: return "Cauchy";
-  case SoftLOne: return "SoftLOne";
-  case Combined: return "Combined";
-  case Tukey: return "Tukey";
-  case None: return "None";
-  default: return "Huber";
-  }
-}
-loss_type Str2loss(const std::string& loss){
-  if (loss=="Huber")
-    return loss_type::Huber;
-  else if (loss=="Cauchy")
-    return loss_type::Cauchy;
-  else if (loss=="SoftLOne")
-    return loss_type::SoftLOne;
-  else if (loss=="Combined")
-    return loss_type::Combined;
-  else if (loss=="Tukey")
-    return loss_type::Tukey;
-  else if (loss=="None")
-    return loss_type::None;
-  else
-    return loss_type::Huber;
-}
 
 
 n_scan_normal_reg::n_scan_normal_reg(){
@@ -97,8 +61,18 @@ void n_scan_normal_reg::GetSurface(std::vector<MapNormalPtr>& scans, std::vector
   }
 }
 
+bool n_scan_normal_reg::RegisterTimeContinuous(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d>& reg_cov, const Eigen::Affine3d& Velocity, bool soft_constraints, bool ccw)
+{
+
+  Affine3dToVectorXYeZ(Velocity, vel_parameters_);
+  time_continuous_ = true;
+  ccw_ = ccw;
+  bool status = Register(scans, Tsrc, reg_cov, soft_constraints);
+  time_continuous_ = false;
+}
+
 bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d> &reg_cov, bool soft_constraints){
-  size_t n_scans = scans.size();
+  const size_t n_scans = scans.size();
   assert(Tsrc.size()==n_scans && reg_cov.size()==n_scans);
 
   if(fixedBlock_.size()!=scans.size()){
@@ -217,39 +191,23 @@ bool n_scan_normal_reg::GetCost(std::vector<MapNormalPtr>& scans, std::vector<Ei
 
 void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr& src_local, const Eigen::Affine2d& Ttar, const Eigen::Affine2d& Tsrc, const size_t scan_idx_tar, const size_t scan_idx_src){
 
-  ceres::LossFunction* ceres_loss = nullptr;
-  if(loss_ == Huber){
-    //cout<<"ceres_loss = new ceres::HuberLoss("<<loss_limit_<<")"<<endl;
-    ceres_loss = new ceres::HuberLoss(loss_limit_);
-  }
-  else if( loss_ == Cauchy){
-    //cout<<"ceres_loss = new ceres::CauchyLoss("<<loss_limit_<<")"<<endl;
-    ceres_loss = new ceres::CauchyLoss(loss_limit_);
-  }
-  else if( loss_ == SoftLOne){
-    //cout<<"ceres_loss = new ceres::SoftLOneLoss("<<loss_limit_<<")"<<endl;
-    ceres_loss = new ceres::SoftLOneLoss(loss_limit_);
-  }
-  else if( loss_ == Tukey){
-    //cout<<"ceres_loss = new ceres::SoftLOneLoss("<<loss_limit_<<")"<<endl;
-    ceres_loss = new ceres::TukeyLoss(loss_limit_);
-  }
-  else if(loss_ == Combined){
-    ceres::LossFunction* f = new ceres::HuberLoss(1);
-    ceres::LossFunction* g = new ceres::CauchyLoss(1);
-    ceres_loss = new ceres::ComposedLoss(f, ceres::DO_NOT_TAKE_OWNERSHIP, g, ceres::DO_NOT_TAKE_OWNERSHIP);
-  }
-  else{
-    //cout<<"ceres_loss = new ceres::TrivialLoss();"<<endl;
-    ceres_loss = nullptr;
-  }
+  ceres::LossFunction* ceres_loss = GetLoss();
 
   double angle_outlier = std::cos(M_PI/6.0);
   int_pair scan_pair = std::make_pair(scan_idx_tar, scan_idx_src);
   std::vector<int_pair> associations;
+  std::unordered_map<size_t,double> stamps;
 
   Eigen::Affine2d Tsrctotar = Ttar.inverse()*Tsrc;    // Associate in global reference frame based normals and center
   for(size_t src_idx=0 ; src_idx<src_local->GetSize() ; src_idx++){
+    if(time_continuous_){
+      double tfactor = src_local->GetCellRelTimeStamp(src_idx, ccw_);
+      stamps[src_idx] = tfactor;
+      Eigen::Affine2d  Tcomp = vectorToAffine2d(tfactor*vel_parameters_[0], tfactor*vel_parameters_[1], tfactor*vel_parameters_[2]);
+      Tsrctotar = Ttar.inverse()*Tsrc*Tcomp; //  Target frame <- odom frame <- corrected distortion <- observation in src frame
+    }
+
+
     const Eigen::Vector2d src_trans_mean  = Tsrctotar*src_local->GetMean2d(src_idx); //src_means_proj.block<2,1>(0,src_idx);
     std::vector<int> tar_idx_nearby = target_local->GetClosestIdx(src_trans_mean, radius_);
     int max_n_terms = 1, n_terms = 0;
@@ -268,8 +226,10 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
   for(size_t i=0 ; i<scan_associations_[scan_pair].size() ; i++){
     const size_t ass_tar_idx = scan_associations_[scan_pair][i].first;
     const size_t ass_src_idx = scan_associations_[scan_pair][i].second;
+    //const double time_scale = time_continuous_ ? stamps.find(ass_src_idx)->second : 0;
     const Eigen::Vector2d tar_mean = target_local->GetMean2d(ass_tar_idx);
     const Eigen::Vector2d src_mean = src_local->GetMean2d(ass_src_idx);
+
     ceres::CostFunction* cost_function;
     if(cost_ == cost_metric::P2L){
 
@@ -293,18 +253,23 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
     }
     else{
       //double scale_similarity = 1-fabs(src_scales(0,ass_src_idx)-tar_scales(0,ass_tar_idx))/(src_scales(0,ass_src_idx)+tar_scales(0,ass_tar_idx));
-      if(efficient_implementation){
+
+      if(time_continuous_)
+        cost_function = P2PEfficientContinuousCost::Create(Ttar*tar_mean, src_mean, 1.0);
+      else if(efficient_implementation)
         cost_function = P2PEfficientCost::Create(Ttar*tar_mean, src_mean);
-      }
       else
         cost_function = P2PCost::Create(tar_mean, src_mean);
     }
-    if(efficient_implementation)
+    if(time_continuous_)
+      problem_->AddResidualBlock(cost_function, ceres_loss, vel_parameters_.data(), parameters[scan_idx_src].data());
+    else if(efficient_implementation)
       problem_->AddResidualBlock(cost_function, ceres_loss, parameters[scan_idx_src].data());
     else
       problem_->AddResidualBlock(cost_function, ceres_loss, parameters[scan_idx_tar].data(), parameters[scan_idx_src].data());
   }
-  /*std::vector<double> residuals;
+}
+/*std::vector<double> residuals;
         for(int i=0 ; i<associations.size() ; i++){
           int ass_tar_idx = associations[i].first;
           int ass_src_idx = associations[i].second;
@@ -317,8 +282,8 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
           //ceres::CostFunction* cost_function = scan_pair_2dnorm_error::Create(tar_mean, tar_normal, src_mean, src_normal, scale_similarity);
           //problem_->AddResidualBlock(cost_function, loss, parameters[scan_idx_tar].data(), parameters[scan_idx_src].data());
         }*/
-  //Eigen::Vector2d src_normal = src_normals.block<2,1>(0, src_idx);
-}
+//Eigen::Vector2d src_normal = src_normals.block<2,1>(0, src_idx);
+
 
 
 bool n_scan_normal_reg::BuildOptimizationProblem(std::vector<MapNormalPtr>& scans, const Eigen::MatrixXd& cov, const Eigen::Vector3d& guess, bool soft_constraints){

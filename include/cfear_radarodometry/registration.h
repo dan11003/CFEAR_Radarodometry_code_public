@@ -22,7 +22,7 @@
 #include "pcl/point_types.h"
 
 #include "visualization_msgs/MarkerArray.h"
-#include "cfear_radarodometry/intensity_utils.h"
+#include "cfear_radarodometry/utils.h"
 #include "ceres/autodiff_cost_function.h"
 #include "ceres/local_parameterization.h"
 #include "ceres/ceres.h"
@@ -46,22 +46,29 @@ typedef boost::shared_ptr<CFEAR_Radarodometry::Registration> regPtr;
 
 const Matrix6d Identity66 = Matrix6d::Identity();
 
+/* cost metric */
+typedef enum costmetric{P2P, P2L, P2D}cost_metric;
+
+cost_metric Str2Cost(const std::string& str);
+
+/* robust loss function */
+typedef enum losstype{None, Huber, Cauchy, SoftLOne, Combined, Tukey}loss_type;
+
+std::string loss2str(const loss_type& loss);
+
+loss_type Str2loss(const std::string& loss);
+
+
 
 class Registration
 {
 public:
 
-EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   Registration();
 
-  //virtual bool Register(MapNormalPtr target, MapNormalPtr src, Eigen::Affine3d& Tsrc, Eigen::MatrixXd& reg_cov)=0;
-
   virtual bool Register(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d>& reg_cov, bool soft_constraints = false)=0;
-
-//  virtual bool Register(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Eigen::Matrix3d>& reg_cov, bool soft_constraints = false)=0;
-
-  //virtual bool Register(MapNormalPtr target, MapNormalPtr src, Eigen::Affine3d& Tsrc, Eigen::Matrix3d& reg_cov) =0;
 
   virtual double getScore();
 
@@ -71,11 +78,17 @@ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 
 
- std::map<int_pair,std::vector<int_pair> >  scan_associations_;
+  std::map<int_pair,std::vector<int_pair> >  scan_associations_;
 
- ceres::Solver::Summary summary_;
+  ceres::Solver::Summary summary_;
 
 protected:
+
+  ceres::LossFunction* GetLoss();
+
+  cost_metric cost_ = P2L;
+  loss_type loss_ = Huber;
+  double loss_limit_ = 0.1;
 
   std::vector<MapNormalPtr> scans_; // 0 = target, 1 = source
   double radius_ = 2.0;
@@ -89,25 +102,6 @@ protected:
   double score_;
 
 };
-
-
-template <typename T>
-Eigen::Matrix<T,3,3> getRotationMatrix(const T* parameters)
-{
-  Eigen::Matrix<T,3,3> rotation_matrix;
-  const T s_1 = ceres::sin(parameters[2]);
-  const T c_1 = ceres::cos(parameters[2]);
-  rotation_matrix <<
-      c_1,     -s_1,     T(0),
-      s_1,     c_1,      T(0),
-      T(0),    T(0),     T(1);
-  return rotation_matrix;
-}
-template <typename T>
-Eigen::Matrix<T,3,1> getTranslationVector(const T* parameters)
-{
-  return Eigen::Matrix<T,3,1>(parameters[0], parameters[1], T(0));
-}
 
 
 Eigen::Matrix3d getScaledRotationMatrix(const std::vector<double>& parameters, double factor);

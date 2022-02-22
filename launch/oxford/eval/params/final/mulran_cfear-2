@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export EVAL_OUTPUT_BASE_PATH="/home/daniel/rosbag/Mulran/eval"
-export BAG_BASE_PATH="/home/daniel/rosbag/Mulran"
+export EVAL_OUTPUT_BASE_PATH="${BAG_LOCATION}/Mulran/eval"
+export BAG_BASE_PATH="${BAG_LOCATION}/Mulran"
 export EVAL_DATASET="mulran"
 export NR_WORKERS="9"
 export KITTI_DIR=`rospack find kitti-odom-eval`
@@ -15,13 +15,13 @@ export EVALUATION_submap_scan_size="3"
 export EVALUATION_registered_min_keyframe_dist="1.5"
 export EVALUATION_res="3.5" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
 export EVALUATION_kstrong="12" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
-export EVALUATION_zmin="60" # between 1 and 100
+export EVALUATION_zmin="70" # between 1 and 100
 export EVALUATION_RANGE_RES="0.0595238" # between 1 and 100
 export EVALUATION_loss_limit="0.1"
 export EVALUATION_loss="Huber"
 export EVALUATION_covar_scale="1"
 export EVALUATION_regularization="1"
-export EVALUATION_weight_intensity="false"
+export EVALUATION_weight_intensity="false true"
 
 echo "-----Loaded PARAMETER LIST -------"
  printf 'Sequence: %s\n' "${EVALUATION_sequence[@]}"

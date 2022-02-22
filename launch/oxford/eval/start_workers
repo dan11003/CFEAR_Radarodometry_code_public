@@ -35,8 +35,8 @@ fi
 source ${PARAMETER_FILE}
 echo "start workers: source ${PARAMETER_FILE}"
 
-current_date=`date '+%Y-%m-%d_%H:%M'`
-started=`date '+%Y/%m/%d_%H:%M'`
+current_date=`date '+%Y-%m-%d_%H%M'`
+started=`date '+%Y/%m/%d_%H%M'`
 echo $current_date
 
 

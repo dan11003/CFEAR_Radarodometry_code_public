@@ -18,20 +18,10 @@
 #include "pcl/point_types.h"
 #include "cfear_radarodometry/registration.h"
 #include "ceres/loss_function.h"
+#include <algorithm>
+
 
 namespace CFEAR_Radarodometry{
-
-/* cost metric */
-typedef enum costmetric{P2P, P2L, P2D}cost_metric;
-
-cost_metric Str2Cost(const std::string& str);
-
-/* robust loss function */
-typedef enum losstype{None, Huber, Cauchy, SoftLOne, Combined, Tukey}loss_type;
-
-std::string loss2str(const loss_type& loss);
-
-loss_type Str2loss(const std::string& loss);
 
 
 /* Registration type */
@@ -47,6 +37,8 @@ public:
 
   bool Register(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d>& reg_cov, bool soft_constraints = false);
 
+  bool RegisterTimeContinuous(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d>& reg_cov, const Eigen::Affine3d& Velocity, bool soft_constraints = false, bool ccw = false);
+
   bool GetCost(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, double& score, std::vector<double>& residuals);
 
   void GetSurface(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d> &reg_cov, bool soft_constraints, Eigen::MatrixXd& surface, double res, int width);
@@ -55,7 +47,7 @@ public:
 
   double getScore(){return score_;}
 
-  double SetD2dPar(const double cov_scale,const double regularization){cov_scale_ = cov_scale; regularization_ = regularization;}
+  void SetD2dPar(const double cov_scale,const double regularization){cov_scale_ = cov_scale; regularization_ = regularization;}
 
   void AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr& src_local, const Eigen::Affine2d& Ttar, const Eigen::Affine2d& Tsrc, const size_t scan_idx_tar, const size_t scan_idx_src);
 
@@ -70,26 +62,27 @@ private:
 
   void EvaluateResiduals(std::vector<MapNormalPtr>& scans);
 
-  cost_metric cost_ = P2L;
-  loss_type loss_ = Huber;
-  double loss_limit_ = 0.1;
   double cov_scale_ = 1;
   double regularization_ = 0.01;
   const double score_tolerance = 0.00001;
   const double max_itr = 8, min_itr = 2;
   const bool efficient_implementation = true;
 
+  bool time_continuous_ = false;
+  std::vector<double> vel_parameters_;
+  bool ccw_ = false;
+
 };
 
 class RegistrationCost{
-  protected:
+protected:
 
   RegistrationCost () {}
 
   template <typename T>
   static Eigen::Matrix<T, 2, 2> GetRotMatrix2D(const T* par){
-    T cos_yaw = ceres::cos(par[2]);
-    T sin_yaw = ceres::sin(par[2]);
+    const T cos_yaw = ceres::cos(par[2]);
+    const T sin_yaw = ceres::sin(par[2]);
     Eigen::Matrix<T, 2, 2> rotation;
     rotation << cos_yaw,  -sin_yaw,
         sin_yaw,  cos_yaw;
@@ -98,8 +91,23 @@ class RegistrationCost{
 
   template <typename T>
   static Eigen::Matrix<T, 2, 1> GetTransMatrix2D(const T*  par) {
-    Eigen::Matrix<T, 2, 1> trans;
-    trans << par[0], par[1];
+    Eigen::Matrix<T, 2, 1> trans {par[0], par[1]};
+    return trans;
+  }
+  template <typename T>
+  static Eigen::Matrix<T, 2, 2> GetScaledRotMatrix2D(const T* par, const T scale){
+    const T scaled_angle = scale*par[2];
+    const T cos_yaw = ceres::cos(scaled_angle);
+    const T sin_yaw = ceres::sin(scaled_angle);
+    Eigen::Matrix<T, 2, 2> rotation;
+    rotation << cos_yaw,  -sin_yaw,
+        sin_yaw,  cos_yaw;
+    return rotation;
+  }
+
+  template <typename T>
+  static Eigen::Matrix<T, 2, 1> GetScaledTransMatrix2D(const T*  par, const T scale) {
+    Eigen::Matrix<T, 2, 1> trans(scale*par[0], scale*par[1]);
     return trans;
   }
 };
@@ -144,7 +152,7 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
 
-  const Eigen::Vector2d tar_mean_;
+    const Eigen::Vector2d tar_mean_;
   const Eigen::Vector2d tar_normal_;
   const Eigen::Vector2d src_mean_;
   const double weight_;
@@ -182,7 +190,7 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
 
-  const Eigen::Vector2d transformed_mean_tar_;
+    const Eigen::Vector2d transformed_mean_tar_;
   const Eigen::Vector2d transformed_normal_tar_;
   const Eigen::Vector2d src_mean_;
   const double weight_;
@@ -225,7 +233,7 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
 
-  const Eigen::Vector2d tar_mean_;
+    const Eigen::Vector2d tar_mean_;
   const Eigen::Matrix2d tar_sqrt_information_;
   const Eigen::Vector2d src_mean_;
 };
@@ -260,7 +268,7 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
 
-  Eigen::Vector3d tar_mean_;
+    Eigen::Vector3d tar_mean_;
   Eigen::Matrix3d tar_sqrt_information_;
   double alpha_;
 };
@@ -298,7 +306,7 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
 
-  const Eigen::Vector2d tar_mean_, src_mean_;
+    const Eigen::Vector2d tar_mean_, src_mean_;
 
 };
 
@@ -314,6 +322,7 @@ public:
 
     const Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Tb);
     const Eigen::Matrix<T,2,2> rot_mat_src = GetRotMatrix2D(Tb);
+
 
     const Eigen::Matrix<T,2,1> transformed_mean_tar = tar_transformed_.cast<T>();
     const Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * (src_mean_).cast<T>()) + trans_mat_src;
@@ -332,7 +341,46 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
 
-  const Eigen::Vector2d tar_transformed_, src_mean_;
+    const Eigen::Vector2d tar_transformed_, src_mean_;
 };
+
+class P2PEfficientContinuousCost : public RegistrationCost{
+public:
+
+  P2PEfficientContinuousCost (const Eigen::Vector2d& tar_transformed, const Eigen::Vector2d& src_mean, const double time_factor) : tar_transformed_(tar_transformed), src_mean_(src_mean), time_factor_(time_factor) {}
+
+  template <typename T>
+  bool operator()(const T*  Tvel,
+                  const T*  Tpose,
+                  T* residuals_ptr) const {
+
+    const T ts(time_factor_);
+    const Eigen::Matrix<T,2,1> trans_vel = GetScaledTransMatrix2D(Tvel, ts); // compensate for velocity
+    const Eigen::Matrix<T,2,2> rot_vel = GetScaledRotMatrix2D(Tvel, ts);
+    const Eigen::Matrix<T,2,1> motion_corrected_src = (rot_vel * (src_mean_).cast<T>()) + trans_vel;
+
+    const Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Tpose);  // transform with pose
+    const Eigen::Matrix<T,2,2> rot_mat_src = GetRotMatrix2D(Tpose);
+    const Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * motion_corrected_src) + trans_mat_src;
+
+    const Eigen::Matrix<T,2,1> transformed_mean_tar = tar_transformed_.cast<T>();
+    residuals_ptr[0] = transformed_mean_tar(0) - transformed_mean_src(0);
+    residuals_ptr[1] = transformed_mean_tar(1) - transformed_mean_src(1);
+    //residuals_ptr[0] = T(scale_similarity_)*(transformed_mean_src-transformed_mean_tar).norm();
+    return true;
+  }
+
+  static ceres::CostFunction* Create(
+      const Eigen::Vector2d& target_mean, const Eigen::Vector2d& src_mean, const double time_factor) {
+    return new ceres::AutoDiffCostFunction<P2PEfficientContinuousCost,2, 3, 3>(new P2PEfficientContinuousCost (target_mean, src_mean, time_factor));
+  }
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  private:
+
+  const Eigen::Vector2d tar_transformed_, src_mean_;
+  const double time_factor_;
+};
+
+
 
 }

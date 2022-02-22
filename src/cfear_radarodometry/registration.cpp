@@ -16,6 +16,66 @@ std::string Registration::GetParameterString(){
   return par_string;
 }
 
+
+cost_metric Str2Cost(const std::string& str){
+  if (str=="P2L")
+    return cost_metric::P2L;
+  else if (str=="P2D")
+    return cost_metric::P2D;
+  else //(str=="P2P")
+    return cost_metric::P2P;
+}
+
+std::string Loss2str(const loss_type& loss){
+  switch (loss){
+  case Huber: return "Huber";
+  case Cauchy: return "Cauchy";
+  case SoftLOne: return "SoftLOne";
+  case Combined: return "Combined";
+  case Tukey: return "Tukey";
+  case None: return "None";
+  default: return "Huber";
+  }
+}
+loss_type Str2loss(const std::string& loss){
+  if (loss=="Huber")
+    return loss_type::Huber;
+  else if (loss=="Cauchy")
+    return loss_type::Cauchy;
+  else if (loss=="SoftLOne")
+    return loss_type::SoftLOne;
+  else if (loss=="Combined")
+    return loss_type::Combined;
+  else if (loss=="Tukey")
+    return loss_type::Tukey;
+  else if (loss=="None")
+    return loss_type::None;
+  else
+    return loss_type::Huber;
+}
+
+ceres::LossFunction* Registration::GetLoss(){
+  ceres::LossFunction* ceres_loss = nullptr;
+  if(loss_ == Huber)
+    ceres_loss = new ceres::HuberLoss(loss_limit_);
+  else if( loss_ == Cauchy)
+    ceres_loss = new ceres::CauchyLoss(loss_limit_);
+  else if( loss_ == SoftLOne)
+    ceres_loss = new ceres::SoftLOneLoss(loss_limit_);
+  else if( loss_ == Tukey)
+    ceres_loss = new ceres::TukeyLoss(loss_limit_);
+  else if(loss_ == Combined){
+    ceres::LossFunction* f = new ceres::HuberLoss(1);
+    ceres::LossFunction* g = new ceres::CauchyLoss(1);
+    ceres_loss = new ceres::ComposedLoss(f, ceres::DO_NOT_TAKE_OWNERSHIP, g, ceres::DO_NOT_TAKE_OWNERSHIP);
+  }
+  else
+    ceres_loss = nullptr;
+  return ceres_loss;
+}
+
+
+
 void normalizeEulerAngles(Eigen::Vector3d &euler) {
   euler[0] = angles::normalize_angle(euler[0]);
   euler[1] = angles::normalize_angle(euler[1]);
@@ -60,19 +120,7 @@ Eigen::Affine2d  vectorToAffine2d(double x, double y, double ez) {
 
 }
 
-void Affine3dToVectorXYeZ(const Eigen::Affine3d& T, std::vector<double>& par) {
-  if(par.size()!=3)
-    par.resize(3,0);
-  par[0] = T.translation()(0);
-  par[1] = T.translation()(1);
-  Eigen::Vector3d eul = T.linear().eulerAngles(0,1,2);
-  par[2] = eul(2);
-}
 
-void Affine3dToEigVectorXYeZ(const Eigen::Affine3d& T, Eigen::Vector3d& par) {
-  Eigen::Vector3d eul = T.linear().eulerAngles(0,1,2);
-  par << T.translation()(0), T.translation()(1), eul(2);
-}
 Eigen::Matrix3d Cov6dTo3d(const Matrix6d& cov){
   Eigen::Matrix3d cov2d;
   cov2d.block<2,2>(0,0) = cov.block<2,2>(0,0);
@@ -81,26 +129,6 @@ Eigen::Matrix3d Cov6dTo3d(const Matrix6d& cov){
   cov2d(2,2) = cov(5,5);
   return cov2d;
 }
-
-
-Eigen::Matrix3d getScaledRotationMatrix(const std::vector<double>& parameters, double factor)
-{
-  Eigen::Matrix3d rotation_matrix;
-  const double s_1 = ceres::sin(factor*parameters[2]);
-  const double c_1 = ceres::cos(factor*parameters[2]);
-  rotation_matrix <<
-      c_1,     -s_1,     0.0,
-      s_1,     c_1,      0.0,
-      0.0,     0.0,      1.0;
-  return rotation_matrix;
-}
-
-Eigen::Vector3d getScaledTranslationVector(const std::vector<double>& parameters, double factor){
-  Eigen::Vector3d vek;
-  vek << factor*parameters[0], factor*parameters[1], 0.0;
-  return vek;
-}
-
 
 
 }
