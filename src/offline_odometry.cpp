@@ -158,6 +158,7 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("gt_directory", po::value<std::string>()->default_value(""), "output folder of ground truth trajectory")
         ("sequence", po::value<std::string>()->default_value("2019-01-10-12-32-52-radar-oxford-10k"), "sequence contrained in \"bagfile\" to evaluate e.g. 2019-01-10-12-32-52-radar-oxford-10k")
         ("dataset", po::value<std::string>()->default_value("oxford"), "name of dataset, take special actions depending on radar file format etc")
+        ("method", po::value<std::string>()->default_value("default"), "name of method")
         ("bag_path", po::value<std::string>()->default_value("/home/daniel/rosbag/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/radar/2019-01-10-12-32-52-radar-oxford-10k.bag"), "bag file to open");
 
     po::variables_map vm;
@@ -194,6 +195,8 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
       eval_par.est_output_dir= vm["est_directory"].as<std::string>();
     if (vm.count("gt_directory"))
       eval_par.gt_output_dir = vm["gt_directory"].as<std::string>();
+    if (vm.count("method"))
+      eval_par.method = vm["method"].as<std::string>();
     if (vm.count("bag_path"))
       p.bag_file_path = vm["bag_path"].as<std::string>();
     if (vm.count("sequence"))

@@ -69,7 +69,7 @@ public:
   public:
     Parameters() {}
     std::string est_output_dir = "", gt_output_dir = "";
-    std::string sequence = "";
+    std::string sequence = "", method = "";
     std::string odom_est_topic = "", odom_gt_topic = "";
     int job_nr = -1;
     bool save_pcd = false;
@@ -86,13 +86,14 @@ public:
     std::string ToString(){
       std::ostringstream stringStream;
       //stringStream << "EvaluateTrajectory::Parameters:"<<endl;
-      stringStream << "todom_est_topic, "<<odom_est_topic<<endl;
+      stringStream << "odom_est_topic, "<<odom_est_topic<<endl;
       stringStream << "gt_topic, "<<odom_gt_topic<<endl;
       stringStream << "est_output_dir, "<<est_output_dir<<endl;
       stringStream << "gt_output_dir, "<<gt_output_dir<<endl;
       stringStream << "sequence, "<<sequence<<endl;
       stringStream << "job nr, "<<job_nr<<endl;
       stringStream << "save pcd, "<<save_pcd<<endl;
+      stringStream << "method, "<<method<<endl;
       return stringStream.str();
     }
   };

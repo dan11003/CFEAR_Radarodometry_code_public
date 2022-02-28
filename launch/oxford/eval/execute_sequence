@@ -14,9 +14,9 @@ mkdir -p "${gt_dir}"
 BAG_FILE_PATH="${BAG_BASE_PATH}/$SEQUENCE/radar/${SEQUENCE}.bag"
 
 
-pars="--sequence ${SEQUENCE} --radar_ccw $3 --soft_constraint $4 --disable_compensate $5 --cost_type $6 --submap_scan_size $7 --registered_min_keyframe_dist $8 --res $9 --k_strongest ${10} --bag_path ${BAG_FILE_PATH} --est_directory ${est_dir} --gt_directory ${gt_dir} --job_nr ${JOB_NR} --z-min ${12} --loss_type ${13} --loss_limit ${14} --covar_scale ${15} --regularization ${16} --range-res ${EVALUATION_RANGE_RES} --dataset ${EVAL_DATASET} --weight_intensity ${17}"
+pars="--sequence ${SEQUENCE} --radar_ccw $3 --soft_constraint $4 --disable_compensate $5 --cost_type $6 --submap_scan_size $7 --registered_min_keyframe_dist $8 --res $9 --k_strongest ${10} --bag_path ${BAG_FILE_PATH} --est_directory ${est_dir} --gt_directory ${gt_dir} --job_nr ${JOB_NR} --z-min ${12} --loss_type ${13} --loss_limit ${14} --covar_scale ${15} --regularization ${16} --range-res ${EVALUATION_RANGE_RES} --dataset ${EVAL_DATASET} --weight_intensity ${17} --method ${EVALUATION_description}"
 
-echo "|||||Estimating odometry with parameters: ${pars}||||"
+#echo "|||||Estimating odometry with parameters: ${pars}||||"
 
 rosrun cfear_radarodometry offline_odometry __name:="odometry_${JOB_NR}" $pars  &> /dev/null
 
