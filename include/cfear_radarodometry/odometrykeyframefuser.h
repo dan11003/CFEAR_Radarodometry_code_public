@@ -143,7 +143,7 @@ public:
       stringStream << "odom_keyframe_topic, "<<odom_keyframe_topic<<endl;
       stringStream << "use raw pointcloud, "<<std::boolalpha<<use_raw_pointcloud<<endl;
       stringStream << "submap keyframes, "<<submap_scan_size<<endl;
-      stringStream << "resolution r, "<<res<<endl;
+      stringStream << "resolution r,"<<res<<endl;
       stringStream << "resample factor f, "<<MapPointNormal::downsample_factor<<endl;
       stringStream << "min. sensor distance [m], "<<min_keyframe_dist_<<endl;
       stringStream << "min. sensor rot. [deg], "<<min_keyframe_rot_deg_<<endl;
@@ -153,13 +153,13 @@ public:
       stringStream << "disable registration, "<<std::boolalpha<<disable_registration<<endl;
       stringStream << "soft velocity constraint, "<<std::boolalpha<<soft_constraint<<endl;
       stringStream << "compensate, "<<std::boolalpha<<compensate<<endl;
-      stringStream << "cost type, "<<std::quoted(cost_type)<<endl;
-      stringStream << "loss type, "<<std::quoted(loss_type_)<<endl;
+      stringStream << "cost type, "<<cost_type<<endl;
+      stringStream << "loss type, "<<loss_type_<<endl;
       stringStream << "loss limit, "<<std::to_string(loss_limit_)<<endl;
       stringStream << "covar scale, "<<std::to_string(covar_scale_)<<endl;
       stringStream << "regularization, "<<std::to_string(regularization_)<<endl;
-      stringStream << "weight intensity, "<<std::to_string(weight_intensity_)<<endl;
-      stringStream << "publish_tf, "<<std::to_string(publish_tf_)<<endl;
+      stringStream << "weight intensity, "<<std::boolalpha<<weight_intensity_<<endl;
+      stringStream << "publish_tf, "<<std::boolalpha<<publish_tf_<<endl;
       return stringStream.str();
     }
   };

@@ -160,7 +160,7 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("sequence", po::value<std::string>()->default_value("2019-01-10-12-32-52-radar-oxford-10k"), "sequence contrained in \"bagfile\" to evaluate e.g. 2019-01-10-12-32-52-radar-oxford-10k")
         ("dataset", po::value<std::string>()->default_value("oxford"), "name of dataset, take special actions depending on radar file format etc")
         ("filter-type", po::value<std::string>()->default_value("kstrong"), "filter type")
-        ("method", po::value<std::string>()->default_value("method"), "method name")
+        ("method_name", po::value<std::string>()->default_value("method"), "method name")
         ("bag_path", po::value<std::string>()->default_value("/home/daniel/rosbag/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/radar/2019-01-10-12-32-52-radar-oxford-10k.bag"), "bag file to open");
 
     po::variables_map vm;
@@ -197,6 +197,8 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
       eval_par.est_output_dir= vm["est_directory"].as<std::string>();
     if (vm.count("gt_directory"))
       eval_par.gt_output_dir = vm["gt_directory"].as<std::string>();
+    if (vm.count("method_name"))
+      eval_par.method = vm["method_name"].as<std::string>();
     if (vm.count("bag_path"))
       p.bag_file_path = vm["bag_path"].as<std::string>();
     if (vm.count("sequence"))
@@ -211,8 +213,6 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
       eval_par.save_pcd = true;
     if (vm.count("filter-type"))
       rad_par.filter_type_ = Str2filter(vm["filter-type"].as<std::string>());
-    if (vm.count("method"))
-      eval_par.method_name = vm["method"].as<std::string>();
 
     par.weight_intensity_ = vm["weight_intensity"].as<bool>();;
     par.compensate = !vm["disable_compensate"].as<bool>();

@@ -1,10 +1,12 @@
 #!/bin/bash
-./start_workers "params/final/oxford_cfear-1"
-./start_workers "params/final/oxford_cfear-2"
-./start_workers "params/final/oxford_cfear-3"
-./start_workers "params/final/oxford_cfear-3-p2l"
+current_date=`date '+%Y-%m-%d_%H%M'`
+export MULTI_EVAL_PREFIX=multi_${current_date}
+./start_workers "params/final/oxford_cfear-1" ${MULTI_EVAL_PREFIX}
+#./start_workers "params/final/oxford_cfear-2" ${MULTI_EVAL_PREFIX}
+#./start_workers "params/final/oxford_cfear-3" ${MULTI_EVAL_PREFIX}
+#./start_workers "params/final/oxford_cfear-3-p2l" ${MULTI_EVAL_PREFIX}
 
-./start_workers "params/final/mulran_cfear-1"
-./start_workers "params/final/mulran_cfear-2"
-./start_workers "params/final/mulran_cfear-3"
-./start_workers "params/final/mulran_cfear-3-p2l"
+./start_workers "params/final/mulran_cfear-1" ${MULTI_EVAL_PREFIX}
+#./start_workers "params/final/mulran_cfear-2" ${MULTI_EVAL_PREFIX}
+#./start_workers "params/final/mulran_cfear-3" ${MULTI_EVAL_PREFIX}
+#./start_workers "params/final/mulran_cfear-3-p2l" ${MULTI_EVAL_PREFIX}

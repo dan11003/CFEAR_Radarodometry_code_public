@@ -533,7 +533,7 @@ void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eige
   for(size_t i = 0; i<marr.markers.size() ; i++){
     marr_text.markers[i].ns = "debug";
 
-    marr_text.markers[i].text = "n="+std::to_string(map->GetCell(i).Nsamples_) + "\navgi=" + std::to_string(map->GetCell(i).avg_intensity_);
+    marr_text.markers[i].text = "n="+std::to_string(map->GetCell(i).Nsamples_) + "\navgi=" + std::to_string(map->GetCell(i).avg_intensity_) + "\nplan=" + std::to_string(map->GetCell(i).GetPlanarity());
     marr_text.markers[i].type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     marr_text.markers[i].pose.position.z = 2.0;
     marr_text.markers[i].scale.z = 1;

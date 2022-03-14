@@ -35,49 +35,49 @@ worker_job_nr="1"
 #echo "output:::${EVALUATION_sequence}"
 for seq in "${EVALUATION_sequence_arr1[@]}"
 do
-echo "${seq}"
+#echo "${seq}"
     for ccw in "${EVALUATION_radar_ccw_arr3[@]}"
     do
-    echo "${ccw}"
+    #echo "${ccw}"
         for sc in "${EVALUATION_soft_constraint_arr4[@]}"
         do
-        echo "${sc}"
+        #echo "${sc}"
             for comp in "${EVALUATION_disable_compensate_arr5[@]}"
             do
-            echo "${comp}"
+            #echo "${comp}"
                 for cost in "${EVALUATION_cost_type_arr6[@]}"
                 do
-                echo "${cost}"
+                #echo "${cost}"
                     for keyframes in "${EVALUATION_submap_scan_size_arr7[@]}"
                     do
-                    echo "${keyframes}"
+                    #echo "${keyframes}"
                         for dist in "${EVALUATION_registered_min_keyframe_dist_arr8[@]}"
                         do
-                        echo "${dist}"
+                        #echo "${dist}"
                             for res in "${EVALUATION_res_arr9[@]}"
                             do
-                            echo "${res}"
+                            #echo "${res}"
                                 for kstrong in "${EVALUATION_kstrong_arr10[@]}"
                                 do
-                                echo "${kstrong}"
+                                #echo "${kstrong}"
                                     for zmin in "${EVALUATION_zmin_arr11[@]}"
                                     do
-                                    echo "${zmin}"
+                                    #echo "${zmin}"
                                         for loss in "${EVALUATION_loss_arr12[@]}"
                                         do
-                                        echo "${loss}"
+                                        #echo "${loss}"
                                 	    for loss_lim in "${EVALUATION_loss_lim_arr13[@]}"
                                 	    do
-                                            echo "${loss_lim}"
+                                            #echo "${loss_lim}"
 						for cov_scale in "${EVALUATION_covar_scale_arr14[@]}"
                                         	do
-                                                echo "${cov_scale}"
+                                                #echo "${cov_scale}"
 	                                	    for regularization in "${EVALUATION_regularization_arr15[@]}"
                                 	    	    do
-                                                    echo "${regularization}"
+                                                    #echo "${regularization}"
                                                         for weight_intensity in "${EVALUATION_weight_intensity_arr16[@]}"
                                                         do
-                                                            echo "${weight_intensity}"
+                                                            #echo "${weight_intensity}"
 
                                                             job_nr=$((job_nr+1))
                                                             responsible_thread=$((job_nr%$NR_WORKERS +1))

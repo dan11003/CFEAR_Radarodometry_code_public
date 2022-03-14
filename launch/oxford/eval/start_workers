@@ -1,6 +1,8 @@
 #!/bin/bash
 
-visualize=$2
+FOLDER_PREFIX=$2
+visualize=$3
+
 
 export PARAMETER_FILE=$1 #"params/oxford_cfear-1"
 
@@ -41,7 +43,7 @@ echo $current_date
 
 
 
-export STAMPED_OUTPUT_EVAL_DIR="$EVAL_OUTPUT_BASE_PATH/${EVALUATION_description}_${current_date}"
+export STAMPED_OUTPUT_EVAL_DIR="$EVAL_OUTPUT_BASE_PATH/${FOLDER_PREFIX}/${EVALUATION_DATASET}_${EVALUATION_description}_${current_date}"
 mkdir -p $STAMPED_OUTPUT_EVAL_DIR
 
 echo "Starting evaluation ${started} output directory ${STAMPED_OUTPUT_EVAL_DIR}"
