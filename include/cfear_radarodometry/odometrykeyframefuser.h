@@ -92,7 +92,8 @@ public:
     double loss_limit_ = 0.1;
     double covar_scale_ = 1.0;
     double regularization_ = 0.0;
-    bool publish_tf_ = false;
+
+    bool publish_tf_ = true;
 
     void GetParametersFromRos( ros::NodeHandle& param_nh){
       param_nh.param<std::string>("input_points_topic", input_points_topic, "/Navtech/Filtered");

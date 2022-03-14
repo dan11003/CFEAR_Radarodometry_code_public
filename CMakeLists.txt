@@ -1,11 +1,12 @@
     cmake_minimum_required(VERSION 2.8.3)
 project(cfear_radarodometry)
-set (CMAKE_CXX_STANDARD 14)
-set(CMAKE_BUILD_TYPE RELEASE_OUTPUT_NAME)
+#set (CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+set(CMAKE_BUILD_TYPE release)
 
 
 if("$ENV{ROS_DISTRO}" STREQUAL "indigo")
-add_definitions(-std=c++14)
+add_definitions(-std=c++17)
 endif()
 ## If pcl not found
 set(PCL_DIR "/usr/lib/x86_64-linux-gnu/cmake/pcl/")
@@ -64,6 +65,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}  ${PCL_
    src/${PROJECT_NAME}/radar_driver.cpp
    src/${PROJECT_NAME}/eval_trajectory.cpp #
    src/${PROJECT_NAME}/statistics.cpp # used to measure execution time
+   src/${PROJECT_NAME}/cfar.cpp # optional filter
  )
 
 add_library(${PROJECT_NAME} ${${PROJECT_NAME}_LIB_SRCS})

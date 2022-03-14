@@ -15,6 +15,16 @@ std::string Registration::GetParameterString(){
     par_string += std::to_string(parameters[i][0])+" "+std::to_string(parameters[i][1])+" "+std::to_string(parameters[i][2])+"\n";
   return par_string;
 }
+void Registration::InitFixedBlocks(const size_t& nsize){
+  if(mode_ == incremental_last_to_previous){
+    fixedBlock_ = std::vector<bool>(nsize,true);
+    fixedBlock_.back() = false;
+  }
+  else{
+    std::cerr<<"Not implemented"<<endl;
+    exit(0);
+  }
+}
 
 
 cost_metric Str2Cost(const std::string& str){
@@ -105,8 +115,15 @@ Eigen::Matrix3d Cov6to3(const Matrix6d& C){
       C(5,0), C(5,1), C(5,5);
   return cov3;
 }
+Eigen::Affine3d vectorToAffine3d(const std::vector<double>& vek){
+  assert(vek.size() == 3);
+  return Eigen::Translation<double, 3>(vek[0], vek[1], 0) *
+      Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitX()) *
+      Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitY()) *
+      Eigen::AngleAxis<double>(vek[2], Eigen::Vector3d::UnitZ());
+}
 
-Eigen::Affine3d   vectorToAffine3d(double x, double y, double z, double ex, double ey, double ez) {
+Eigen::Affine3d vectorToAffine3d(double x, double y, double z, double ex, double ey, double ez) {
 
   return Eigen::Translation<double, 3>(x, y, z) *
       Eigen::AngleAxis<double>(ex, Eigen::Vector3d::UnitX()) *
@@ -129,6 +146,7 @@ Eigen::Matrix3d Cov6dTo3d(const Matrix6d& cov){
   cov2d(2,2) = cov(5,5);
   return cov2d;
 }
+
 
 
 }

@@ -1,3 +1,4 @@
+
 #include "ros/ros.h"
 #include "ros/node_handle.h"
 #include "vector"
@@ -95,7 +96,7 @@ public:
         driver.CallbackOffline(image_msg, cloud_filtered);
         CFEAR_Radarodometry::timing.Document("Filtered points",cloud_filtered->size());
         Eigen::Affine3d Tcurrent;
-        fuser.pointcloudCallback(cloud_filtered, Tcurrent);
+            fuser.pointcloudCallback(cloud_filtered, Tcurrent);
         //cout<<Tcurrent.translation().transpose()<<endl;
 
         const ros::Time t = image_msg->header.stamp;
@@ -107,7 +108,7 @@ public:
         ros::Duration d = ros::Duration(tnow-tinit);
         static ros::Duration tot(0);
         tot +=d;
-        //usleep(1000*100);
+        //usleep(1000*500);
 
         cout<<"Frame: "<<frame<<", dur: "<<d<<", avg: "<<++frame/tot.toSec()<<endl;
       }
@@ -158,6 +159,8 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("gt_directory", po::value<std::string>()->default_value(""), "output folder of ground truth trajectory")
         ("sequence", po::value<std::string>()->default_value("2019-01-10-12-32-52-radar-oxford-10k"), "sequence contrained in \"bagfile\" to evaluate e.g. 2019-01-10-12-32-52-radar-oxford-10k")
         ("dataset", po::value<std::string>()->default_value("oxford"), "name of dataset, take special actions depending on radar file format etc")
+        ("filter-type", po::value<std::string>()->default_value("kstrong"), "filter type")
+        ("method", po::value<std::string>()->default_value("method"), "method name")
         ("bag_path", po::value<std::string>()->default_value("/home/daniel/rosbag/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/radar/2019-01-10-12-32-52-radar-oxford-10k.bag"), "bag file to open");
 
     po::variables_map vm;
@@ -206,6 +209,10 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
       rad_par.range_res = vm["range-res"].as<double>();
     if (vm.count("savepcd"))
       eval_par.save_pcd = true;
+    if (vm.count("filter-type"))
+      rad_par.filter_type_ = Str2filter(vm["filter-type"].as<std::string>());
+    if (vm.count("method"))
+      eval_par.method_name = vm["method"].as<std::string>();
 
     par.weight_intensity_ = vm["weight_intensity"].as<bool>();;
     par.compensate = !vm["disable_compensate"].as<bool>();

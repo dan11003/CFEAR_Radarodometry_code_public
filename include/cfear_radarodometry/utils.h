@@ -44,7 +44,7 @@ pcl::PointXYZ XYZI_to_XYZ(const pcl::PointXYZI &pin);
 
 pcl::PointXYZI XYZ_to_XYZI(const pcl::PointXYZ &pin, double intensity = 1);
 
-
+void Compensate(pcl::PointCloud<pcl::PointXYZI>& cloud, const std::vector<double>& mot, bool ccw);
 
 void Compensate(pcl::PointCloud<pcl::PointXYZI>& cloud, const Eigen::Affine3d& Tmotion, bool ccw);
 
@@ -56,6 +56,10 @@ Eigen::Vector3d getScaledTranslationVector(const std::vector<double>& parameters
 
 Eigen::Matrix3d getScaledRotationMatrix(const std::vector<double>& parameters, double factor);
 
+template<typename T>
+void printVector(const T& t) {
+    std::copy(t.cbegin(), t.cend(), std::ostream_iterator<typename T::value_type>(std::cout, ", "));
+}
 
 
 }

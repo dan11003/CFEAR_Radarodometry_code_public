@@ -6,6 +6,7 @@ export EVAL_DATASET="oxford"
 export NR_WORKERS="1"
 export KITTI_DIR=`rospack find kitti-odom-eval`
 export EVALUATION_description="oxford-cfear2-d2d"
+export EVALUATION_methodname="cfear2-d2d"
 export EVALUATION_sequence="2019-01-10-12-32-52-radar-oxford-10k 2019-01-16-13-09-37-radar-oxford-10k 2019-01-17-13-26-39-radar-oxford-10k 2019-01-18-14-14-42-radar-oxford-10k 2019-01-18-15-20-12-radar-oxford-10k 2019-01-16-11-53-11-radar-oxford-10k 2019-01-10-11-46-21-radar-oxford-10k 2019-01-18-14-46-59-radar-oxford-10k"
 export EVALUATION_radar_ccw="false"
 export EVALUATION_soft_constraint="false"

@@ -12,11 +12,19 @@
 #include "pcl_conversions/pcl_conversions.h"
 #include "cfear_radarodometry/radar_filters.h"
 #include "cfear_radarodometry/statistics.h"
+#include "cfear_radarodometry/cfar.h"
 
 namespace CFEAR_Radarodometry  {
 using std::cout;
 using std::endl;
 using std::cerr;
+
+typedef enum filter_type{kstrong, CACFAR}filtertype;
+
+std::string Filter2str(const filtertype& filter);
+
+filtertype Str2filter(const std::string& filter);
+
 
 
 class radarDriver
@@ -33,8 +41,10 @@ public:
     float min_distance = 2.5, max_distance = 200;
     std::string radar_frameid = "sensor_est", topic_filtered = "/Navtech/Filtered";
     std::string dataset = "oxford";
+    filtertype filter_type_ = filtertype::kstrong;
 
     void GetParametersFromRos( ros::NodeHandle& param_nh){
+
       param_nh.param<float>("range_res", range_res, 0.0438);
       param_nh.param<float>("z_min", z_min, 60);
       param_nh.param<float>("min_distance", min_distance, 2.5);
@@ -43,6 +53,9 @@ public:
       param_nh.param<std::string>("topic_filtered", topic_filtered, "/Navtech/Filtered");
       param_nh.param<std::string>("radar_frameid", radar_frameid, "sensor_est");
       param_nh.param<std::string>("dataset", dataset, "oxford");
+      std::string filter;
+      param_nh.param<std::string>("filter_type", filter, "kstrong");
+      filter_type_ = Str2filter(filter);
     }
     std::string ToString(){
       std::ostringstream stringStream;
@@ -55,6 +68,7 @@ public:
       stringStream << "topic_filtered, "<<topic_filtered<<endl;
       stringStream << "radar_frameid, "<<radar_frameid<<endl;
       stringStream << "dataset, "<<dataset<<endl;
+      stringStream << "filter type, "<<Filter2str(filter_type_)<<endl;
 
       return stringStream.str();
     }
@@ -63,7 +77,7 @@ public:
 
   radarDriver(const Parameters& pars, bool disable_callback = false);
 
-  ~radarDriver(){cout<<"destruct driver"<<endl;}
+  ~radarDriver(){}
 
   void CallbackOffline(const sensor_msgs::ImageConstPtr &radar_image_polar, pcl::PointCloud<pcl::PointXYZI>::Ptr &cloud);
 

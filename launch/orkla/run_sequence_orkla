@@ -18,7 +18,7 @@ echo "${BAG_FILE_PATH}"
 
 
 
-export radar_ccw="true"
+export radar_ccw="false"
 export soft_constraint="false"
 export disable_compensate="false"
 export cost_type="P2P"
@@ -30,10 +30,11 @@ export zmin="70"
 export min_distance="2.5"
 export range_res="0.0438"
 export save_pcd=""
+export filter_type="kstrong"
 
 
 
-pars="--range-res ${range_res} --sequence ${SEQUENCE} --radar_ccw ${radar_ccw} --soft_constraint ${soft_constraint} --disable_compensate ${disable_compensate} --cost_type ${cost_type} --submap_scan_size ${submap_scan_size} --registered_min_keyframe_dist ${registered_min_keyframe_dist} --res ${res} --k_strongest ${kstrong} --bag_path ${BAG_FILE_PATH} --est_directory ${est_dir} --gt_directory ${gt_dir} --job_nr 1 --z-min ${zmin} --dataset ${DATASET} --min_distance ${min_distance} "
+pars="--range-res ${range_res} --sequence ${SEQUENCE} --radar_ccw ${radar_ccw} --soft_constraint ${soft_constraint} --disable_compensate ${disable_compensate} --cost_type ${cost_type} --submap_scan_size ${submap_scan_size} --registered_min_keyframe_dist ${registered_min_keyframe_dist} --res ${res} --k_strongest ${kstrong} --bag_path ${BAG_FILE_PATH} --est_directory ${est_dir} --gt_directory ${gt_dir} --job_nr 1 --z-min ${zmin} --dataset ${DATASET} --min_distance ${min_distance} --filter-type ${filter_type}"
 echo "|||||Estimating odometry with parameters: ${pars}||||"
 roslaunch cfear_radarodometry vis.launch&
 rosrun cfear_radarodometry offline_odometry ${pars} #>/dev/null

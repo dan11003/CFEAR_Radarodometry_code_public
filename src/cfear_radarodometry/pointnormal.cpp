@@ -103,6 +103,27 @@ MapPointNormal::MapPointNormal(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cld, 
   kd_cells.setInputCloud(downsampled_);
 }
 
+void MapPointNormal::Compensate(const Eigen::Affine3d& Tmot, const bool ccw){
+  CFEAR_Radarodometry::Compensate(*input_, Tmot, ccw);
+  std::vector<double> mot_vek;
+  CFEAR_Radarodometry::Affine3dToVectorXYeZ(Tmot, mot_vek);
+  Eigen::Affine2d T(Eigen::Affine2d::Identity());
+  downsampled_->clear();
+  for(size_t i =0 ; i < cells.size() ; i++){
+    double rel_timestamp = GetCellRelTimeStamp(i,ccw);
+    //cout<<i<<", "<<rel_timestamp<<endl;
+    T.linear() = getScaledRotationMatrix(mot_vek, rel_timestamp).block<2,2>(0,0);
+    T.translation() = getScaledTranslationVector(mot_vek, rel_timestamp).block<2,1>(0,0);
+    cells[i] = cells[i].TransformCopy(T);
+    pcl::PointXY pxy;
+    pxy.x = cells[i].u_(0);
+    pxy.y = cells[i].u_(1);
+    downsampled_->push_back(pxy);
+  }
+  kd_cells.setInputCloud(downsampled_);
+
+
+}
 
 MapNormalPtr MapPointNormal::TransformMap(const Eigen::Affine3d& T){
   return MapNormalPtr( new MapPointNormal(input_, radius_, cells, T) );
@@ -395,7 +416,7 @@ visualization_msgs::Marker DefaultMarker( const ros::Time& time, const std::stri
   return marker;
 }
 void intToRGB(const int value,float& red,float& green, float& blue) {
-  //credit to https://stackoverflow.com/a/2262117/2737978 for the idea of how to implement
+  //credit to httphttps://www.svt.se/nyheter/inrikes/finansministern-har-presstraffs://stackoverflow.com/a/2262117/2737978 for the idea of how to implement
   //blue = std::floor(value % 256);
   //green = std::floor(value / 256 % 256);
   //red = std::floor(value / 256 / 256 % 256);
@@ -429,7 +450,7 @@ visualization_msgs::MarkerArray Cells2Markers(std::vector<cell>& cells, const ro
     //Eigen::Vector2d end = u + 3*cells[i].snormal_;//*d;//+ cells[i].Affine3d*log(d/2);
     Eigen::Vector2d end = u + cells[i].snormal_*d;
     geometry_msgs::Point p;
-    p.x = u(0);
+    p.x = u(0);https://www.svt.se/nyheter/inrikes/finansministern-har-presstraff
     p.y = u(1);
     p.z = 0;
     m.points.push_back(p);
@@ -438,11 +459,11 @@ visualization_msgs::MarkerArray Cells2Markers(std::vector<cell>& cells, const ro
     p.z = 0;
     m.points.push_back(p);
     m.id = i;
-    m.ns = "";
-    //m.pose.orientation.w = 1;
-    //m.pose.orientation.z = 1;
-    //m.pose.orientation.y = 0;
-    //m.pose.orientation.x = 0;
+    m.ns = "normal";
+    m.pose.orientation.w = 1;
+    m.pose.orientation.z = 0;
+    m.pose.orientation.y = 0;
+    m.pose.orientation.x = 0;
     marr.markers.push_back(m);
   }
   return marr;
@@ -468,11 +489,11 @@ visualization_msgs::MarkerArray Cells2Markers(std::vector<cell>& cells, const ro
 
 
 cell cell::TransformCopy(const Eigen::Affine2d& T){
-  Eigen::Matrix2d R = T.linear();
-  Eigen::Matrix2d C = R*T*cov_*R.transpose();
-  Eigen::Vector2d N = R*snormal_;
-  Eigen::Vector2d N_orth = R*orth_normal;
-  Eigen::Vector2d U = T*u_;
+  const Eigen::Matrix2d R = T.linear();
+  const Eigen::Matrix2d C = R*T*cov_*R.transpose();
+  const Eigen::Vector2d N = R*snormal_;
+  const Eigen::Vector2d N_orth = R*orth_normal;
+  const Eigen::Vector2d U = T*u_;
   //U(2) = std::cos(GetAngle());
   cell c(*this);
   c.u_ = U;
@@ -499,17 +520,28 @@ void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eige
     it = MapPointNormal::pubs.find(topic);
   }
   //cout<<"publish to "<<topic<<endl;
-  visualization_msgs::Marker m = DefaultMarker(ros::Time::now(), frame_id);
+  visualization_msgs::Marker m; //= DefaultMarker(ros::Time::now(), frame_id);
   m.action = visualization_msgs::Marker::DELETEALL;
   visualization_msgs::MarkerArray marr_delete;
   marr_delete.markers.push_back(m);
   it->second.publish(marr_delete);
   std::vector<cell> cells = map->TransformCells(T);
-  for(auto && c : cells){
-    //cout<<"u: "<<c.u_<<
-  }
+
   visualization_msgs::MarkerArray marr = Cells2Markers(cells, ros::Time::now(), frame_id, value);
   it->second.publish(marr);
+  visualization_msgs::MarkerArray marr_text(marr);
+  for(size_t i = 0; i<marr.markers.size() ; i++){
+    marr_text.markers[i].ns = "debug";
+
+    marr_text.markers[i].text = "n="+std::to_string(map->GetCell(i).Nsamples_) + "\navgi=" + std::to_string(map->GetCell(i).avg_intensity_);
+    marr_text.markers[i].type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    marr_text.markers[i].pose.position.z = 2.0;
+    marr_text.markers[i].scale.z = 1;
+    marr_text.markers[i].pose.position.x = cells[i].u_(0);
+    marr_text.markers[i].pose.position.y = cells[i].u_(1);
+  }
+  it->second.publish(marr_text);
+
 }
 
 /*void cell::ToNDTMsg(std::vector<cell>& cells, ndt_map::NDTMapMsg& msg){

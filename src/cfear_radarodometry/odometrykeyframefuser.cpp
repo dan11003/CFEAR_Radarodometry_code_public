@@ -177,6 +177,9 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   CFEAR_Radarodometry::MapNormalPtr Pcurrent = CFEAR_Radarodometry::MapNormalPtr(new MapPointNormal(cloud, par.res, Eigen::Vector2d(0,0), par.weight_intensity_, par.use_raw_pointcloud));
 
 
+
+
+
   ros::Time t2 = ros::Time::now();
   Eigen::Affine3d Tguess;
   if(par.use_guess)
@@ -188,16 +191,25 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
     AddToReference(keyframes_, Pcurrent, Eigen::Affine3d::Identity());
     return;
   }
-  else{
-    std::vector<bool> fixedBlock(keyframes_.size() + 1, true);
-    fixedBlock.back() = false;
+  else
     FormatScans(keyframes_, Pcurrent, Tguess, cov_vek, scans_vek, T_vek);
-    radar_reg->SetFixedBlocks(fixedBlock);
-  }
+
 
   bool success = true;
+  Eigen::Affine3d Tprior = T_prev;
+  //cout<<"prior:"<<Tprior.translation().transpose()<<endl;
+  //cout<<"guess:"<<Tguess.translation().transpose()<<endl;
+
   if(!par.disable_registration)
     bool success = radar_reg->Register(scans_vek, T_vek, cov_vek, par.soft_constraint);
+    //bool success = radar_reg->RegisterTimeContinuous(scans_vek, T_vek, cov_vek, Tmot, par.soft_constraint, par.radar_ccw);
+
+
+
+    //bool success = radar_reg->RegisterTimeContinuous(scans_vek, T_vek, cov_vek, Tmot, par.soft_constraint, par.radar_ccw);
+    //bool success = radar_reg->Register(scans_vek, T_vek, cov_vek, par.soft_constraint);
+    //
+
   ros::Time t3 = ros::Time::now();
   //cout<<radar_reg->getScore()<<endl;
 
@@ -205,8 +217,10 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
     //    cout<<"registration failure"<<radar_reg->summary_.FullReport()<<endl;
     exit(0);
   }
+
   //PlotAssociations(scans_vek, T_vek, radar_reg->scan_associations_,  t);
   Tcurrent = T_vek.back();
+  //Pcurrent->Compensate(Tmot, par.radar_ccw);
   Eigen::Affine3d Tmot_current = T_prev.inverse()*Tcurrent;
   if(!AccelerationVelocitySanityCheck(Tmot, Tmot_current))
     Tcurrent = Tguess; //Insane acceleration and speed, lets use the guess.

@@ -53,6 +53,8 @@ public:
 
   double GetAngle();
 
+  double GetPlanarity(){return lambda_min/(lambda_min + lambda_max);}
+
   static cell GetIdentityCell(const Eigen::Vector2d& u, const double intensity) { return cell(u,intensity); } // Use only for raw data
 
   //static void ToNDTMsg(std::vector<cell>& cells, ndt_map::NDTMapMsg& msg);
@@ -101,6 +103,8 @@ public:
 
   std::vector<cell> GetCells(){return cells;}
 
+  cell& GetCell(const size_t i){cells[i];}
+
   //std::vector<cell*> GetClosest(cell* c, double d);
 
   std::vector<cell*> GetClosest(Eigen::Vector2d& p, double d);
@@ -112,6 +116,8 @@ public:
   double GetCellRelTimeStamp(const size_t index, const bool ccw);
 
   //pcl::PointCloud<pcl::PointXYZINormal>::Ptr GetCloud();
+
+  void Compensate(const Eigen::Affine3d& Tmot, const bool ccw);
 
   std::vector<cell> TransformCells(const Eigen::Affine3d& T);
 

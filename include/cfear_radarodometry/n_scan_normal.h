@@ -37,7 +37,7 @@ public:
 
   bool Register(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d>& reg_cov, bool soft_constraints = false);
 
-  bool RegisterTimeContinuous(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d>& reg_cov, const Eigen::Affine3d& Velocity, bool soft_constraints = false, bool ccw = false);
+  bool RegisterTimeContinuous(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d>& reg_cov,  Eigen::Affine3d& Tprev, bool soft_constraints = false, bool ccw = false);
 
   bool GetCost(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, double& score, std::vector<double>& residuals);
 
@@ -65,7 +65,7 @@ private:
   double cov_scale_ = 1;
   double regularization_ = 0.01;
   const double score_tolerance = 0.00001;
-  const double max_itr = 8, min_itr = 2;
+  const double max_itr = 8, min_itr = 3;
   const bool efficient_implementation = true;
 
   bool time_continuous_ = false;
@@ -99,6 +99,15 @@ protected:
     const T scaled_angle = scale*par[2];
     const T cos_yaw = ceres::cos(scaled_angle);
     const T sin_yaw = ceres::sin(scaled_angle);
+    Eigen::Matrix<T, 2, 2> rotation;
+    rotation << cos_yaw,  -sin_yaw,
+        sin_yaw,  cos_yaw;
+    return rotation;
+  }
+  template <typename T>
+  static Eigen::Matrix<T, 2, 2> GetRotMatrix2D(const T theta){
+    const T cos_yaw = ceres::cos(theta);
+    const T sin_yaw = ceres::sin(theta);
     Eigen::Matrix<T, 2, 2> rotation;
     rotation << cos_yaw,  -sin_yaw,
         sin_yaw,  cos_yaw;
@@ -347,16 +356,21 @@ public:
 class P2PEfficientContinuousCost : public RegistrationCost{
 public:
 
-  P2PEfficientContinuousCost (const Eigen::Vector2d& tar_transformed, const Eigen::Vector2d& src_mean, const double time_factor) : tar_transformed_(tar_transformed), src_mean_(src_mean), time_factor_(time_factor) {}
+  P2PEfficientContinuousCost (const Eigen::Vector2d& tar_transformed, const Eigen::Vector2d& src_mean, const double time_factor, const std::vector<double>& velocity) : tar_transformed_(tar_transformed), src_mean_(src_mean), time_factor_(time_factor), velocity_(velocity){}
 
   template <typename T>
-  bool operator()(const T*  Tvel,
-                  const T*  Tpose,
+  bool operator()(const T*  Tpose,
                   T* residuals_ptr) const {
 
     const T ts(time_factor_);
-    const Eigen::Matrix<T,2,1> trans_vel = GetScaledTransMatrix2D(Tvel, ts); // compensate for velocity
-    const Eigen::Matrix<T,2,2> rot_vel = GetScaledRotMatrix2D(Tvel, ts);
+    const T vtheta( ts*(velocity_[2]) ); // rotation velocity
+    //const Eigen::Matrix<T,2,1> trans_vel{ ts*(current_pose_[0] - prev_pose_[0]), ts*(Tpose[1] - current_pose_[1])}; // translation velocity
+
+    const Eigen::Matrix<T,2,1> trans_vel{ ts*velocity_[0], ts*velocity_[1] }; // translation velocityconst Eigen::Matrix<T,2,2> rot_vel = GetRotMatrix2D(vtheta);
+
+    //const T vtheta(0.0); // rotation velocity
+    //const Eigen::Matrix<T,2,1> trans_vel( 0, 0); // translation velocity
+    const Eigen::Matrix<T,2,2> rot_vel = GetRotMatrix2D(vtheta);
     const Eigen::Matrix<T,2,1> motion_corrected_src = (rot_vel * (src_mean_).cast<T>()) + trans_vel;
 
     const Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Tpose);  // transform with pose
@@ -371,14 +385,15 @@ public:
   }
 
   static ceres::CostFunction* Create(
-      const Eigen::Vector2d& target_mean, const Eigen::Vector2d& src_mean, const double time_factor) {
-    return new ceres::AutoDiffCostFunction<P2PEfficientContinuousCost,2, 3, 3>(new P2PEfficientContinuousCost (target_mean, src_mean, time_factor));
+      const Eigen::Vector2d& target_mean, const Eigen::Vector2d& src_mean, const double time_factor, const std::vector<double>& velocity) {
+    return new ceres::AutoDiffCostFunction<P2PEfficientContinuousCost,2, 3>(new P2PEfficientContinuousCost (target_mean, src_mean, time_factor, velocity));
   }
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
 
   const Eigen::Vector2d tar_transformed_, src_mean_;
   const double time_factor_;
+  const std::vector<double> velocity_;
 };
 
 

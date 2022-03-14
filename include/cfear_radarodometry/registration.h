@@ -44,6 +44,8 @@ typedef std::pair<int,int> int_pair;
 typedef Eigen::Matrix<double,6,6> Matrix6d;
 typedef boost::shared_ptr<CFEAR_Radarodometry::Registration> regPtr;
 
+typedef enum reg_mode{incremental_last_to_previous, many_to_many_refinement} regmode;
+
 const Matrix6d Identity66 = Matrix6d::Identity();
 
 /* cost metric */
@@ -74,7 +76,12 @@ public:
 
   virtual std::string GetParameterString();
 
-  void SetFixedBlocks(std::vector<bool>& fixedBlock){fixedBlock_ = fixedBlock;}
+  //void SetFixedBlocks(std::vector<bool>& fixedBlock){fixedBlock_ = fixedBlock;}
+
+  void InitFixedBlocks(const size_t& nsize);
+
+  void SetMode(const regmode mode){mode_ = mode;}
+
 
 
 
@@ -96,6 +103,7 @@ protected:
   std::vector<bool> fixedBlock_;
   ros::NodeHandle nh_;
   boost::shared_ptr<ceres::Problem> problem_;
+  regmode mode_ = incremental_last_to_previous;
 
   ceres::Solver::Options options_;
   ros::Publisher pub_association;
@@ -115,6 +123,8 @@ void normalizeEulerAngles(Eigen::Vector3d &euler);
 inline geometry_msgs::Point Pntgeom(Eigen::Vector3d& u);
 
 Eigen::Affine3d vectorToAffine3d(double x, double y, double z, double ex, double ey, double ez);
+
+Eigen::Affine3d vectorToAffine3d(const std::vector<double>& vek);
 
 Eigen::Affine2d vectorToAffine2d(double x, double y, double ez);
 

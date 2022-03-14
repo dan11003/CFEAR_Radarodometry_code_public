@@ -21,13 +21,9 @@ n_scan_normal_reg::n_scan_normal_reg(const cost_metric &cost,loss_type loss, dou
   loss_limit_ = loss_limit;
 }
 void n_scan_normal_reg::GetSurface(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d> &reg_cov, bool soft_constraints, Eigen::MatrixXd& surface, double res, int width){
-  size_t n_scans = scans.size();
+  const size_t n_scans = scans.size();
   assert(Tsrc.size()==n_scans && reg_cov.size()==n_scans);
-
-  if(fixedBlock_.size()!=scans.size()){
-    fixedBlock_.resize(scans.size(), true);
-    fixedBlock_.back() = false;
-  }
+  InitFixedBlocks(n_scans);
   parameters.resize(n_scans,std::vector<double>());
   for(size_t i = 0 ; i<n_scans ; i++){
     Affine3dToVectorXYeZ(Tsrc[i], parameters[i]);
@@ -61,24 +57,26 @@ void n_scan_normal_reg::GetSurface(std::vector<MapNormalPtr>& scans, std::vector
   }
 }
 
-bool n_scan_normal_reg::RegisterTimeContinuous(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d>& reg_cov, const Eigen::Affine3d& Velocity, bool soft_constraints, bool ccw)
+bool n_scan_normal_reg::RegisterTimeContinuous(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d>& reg_cov,  Eigen::Affine3d& Tvel, bool soft_constraints, bool ccw)
 {
 
-  Affine3dToVectorXYeZ(Velocity, vel_parameters_);
+  Eigen::Affine3d Tid = Eigen::Affine3d::Identity();
+  Affine3dToVectorXYeZ(Tvel, vel_parameters_);
+  //Affine3dToVectorXYeZ(Tprev, prev_parameters_);
+  //Affine3dToVectorXYeZ(Tsrc.back(), current_parameters_);
   time_continuous_ = true;
   ccw_ = ccw;
   bool status = Register(scans, Tsrc, reg_cov, soft_constraints);
   time_continuous_ = false;
+  //cout<<"vel: "<<prev_parameters_[0]<<", "<<prev_parameters_[1]<<", "<<prev_parameters_[2]<<endl;
 }
 
 bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d> &reg_cov, bool soft_constraints){
   const size_t n_scans = scans.size();
   assert(Tsrc.size()==n_scans && reg_cov.size()==n_scans);
+  InitFixedBlocks(n_scans);
 
-  if(fixedBlock_.size()!=scans.size()){
-    fixedBlock_.resize(scans.size(), true);
-    fixedBlock_.back() = false;
-  }
+
   parameters.resize(n_scans,std::vector<double>());
   for(size_t i = 0 ; i<n_scans ; i++){
     Affine3dToVectorXYeZ(Tsrc[i], parameters[i]);
@@ -107,10 +105,10 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
     const double rot_diff = fabs(parameters.back()[2] - prev_par[2])*180/M_PI;
 
     //cout<<"trans diff: "<<trans_diff.norm()<<", rot diff: "<<rot_diff<<endl;
-    if(itr > 1 && (trans_diff.norm() < 0.001 && rot_diff <0.01) ){ // this movement is so small, no need to waste time on details of this level. Could be that the sensor is stationary
+    /*if(itr > 1 && (trans_diff.norm() < 0.001 && rot_diff <0.01) ){ // this movement is so small, no need to waste time on details of this level. Could be that the sensor is stationary
       //CFEAR_Radarodometry::timing.Document("no-param-change", 1);
       break;
-    }
+    }*/
 
     if( itr > min_itr){
       if(prev_score < current_score) // potential problem, recover to prev iteration
@@ -150,9 +148,10 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
       reg_cov[i] = m.asDiagonal();
 
     for(size_t i = 0 ; i<n_scans ; i++)
-      Tsrc[i] = vectorToAffine3d(parameters[i][0], parameters[i][1], 0, 0, 0, parameters[i][2]);
+      Tsrc[i] = vectorToAffine3d(parameters[i]);
 
     success = GetCovariance(reg_cov.back());
+    //cout<<summary_.FullReport()<<endl;
 
     return success;
   }
@@ -195,14 +194,22 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
 
   double angle_outlier = std::cos(M_PI/6.0);
   int_pair scan_pair = std::make_pair(scan_idx_tar, scan_idx_src);
-  std::vector<int_pair> associations;
   std::unordered_map<size_t,double> stamps;
 
   Eigen::Affine2d Tsrctotar = Ttar.inverse()*Tsrc;    // Associate in global reference frame based normals and center
+  //cout<<"tar: "<<scan_idx_tar<<", src: "<<scan_idx_src<<", par: "<<parameters.size()<<endl;
   for(size_t src_idx=0 ; src_idx<src_local->GetSize() ; src_idx++){
     if(time_continuous_){
+      if (scan_idx_src != parameters.size()-1) {
+        cout<<"error index, "<<scan_idx_src<<","<<parameters.size()-1<<endl;
+        exit(0);
+      }
+
       double tfactor = src_local->GetCellRelTimeStamp(src_idx, ccw_);
       stamps[src_idx] = tfactor;
+      //const double vel_x = current_parameters_[0] - prev_parameters_[0];//parameters.back()[0] - prev_parameters_[0];
+      //const double vel_y = current_parameters_[1] - prev_parameters_[1];//parameters.back()[1] - prev_parameters_[1];
+      //const double vel_t = current_parameters_[2] - prev_parameters_[2]; //parameters.back()[2] - prev_parameters_[2];
       Eigen::Affine2d  Tcomp = vectorToAffine2d(tfactor*vel_parameters_[0], tfactor*vel_parameters_[1], tfactor*vel_parameters_[2]);
       Tsrctotar = Ttar.inverse()*Tsrc*Tcomp; //  Target frame <- odom frame <- corrected distortion <- observation in src frame
     }
@@ -226,7 +233,7 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
   for(size_t i=0 ; i<scan_associations_[scan_pair].size() ; i++){
     const size_t ass_tar_idx = scan_associations_[scan_pair][i].first;
     const size_t ass_src_idx = scan_associations_[scan_pair][i].second;
-    //const double time_scale = time_continuous_ ? stamps.find(ass_src_idx)->second : 0;
+    const double time_scale = time_continuous_ ? stamps.find(ass_src_idx)->second : 0;
     const Eigen::Vector2d tar_mean = target_local->GetMean2d(ass_tar_idx);
     const Eigen::Vector2d src_mean = src_local->GetMean2d(ass_src_idx);
 
@@ -247,7 +254,7 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
       Eigen::Matrix2d reg_mat;
       reg_mat<<regularization_, 0, 0, regularization_; //pow(10,-6), 0, 0, pow(10,-6);
       const Eigen::Matrix2d tar_cov = (reg_mat + Ttar.linear()*target_local->GetCov2d(ass_tar_idx)*Ttar.linear().transpose())*cov_scale_ ;
-      //cout<<"tar_cov: "<<tar_cov<<endl;
+      //<<"tar_cov: "<<tar_cov<<endl;
       const Eigen::Matrix2d sqrt_information = tar_cov.inverse().llt().matrixL();
       cost_function = P2DCost::Create(tar_mean, sqrt_information , src_mean);
     }
@@ -255,19 +262,24 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
       //double scale_similarity = 1-fabs(src_scales(0,ass_src_idx)-tar_scales(0,ass_tar_idx))/(src_scales(0,ass_src_idx)+tar_scales(0,ass_tar_idx));
 
       if(time_continuous_)
-        cost_function = P2PEfficientContinuousCost::Create(Ttar*tar_mean, src_mean, 1.0);
+        cost_function = P2PEfficientContinuousCost::Create(Ttar*tar_mean, src_mean, time_scale, vel_parameters_);
       else if(efficient_implementation)
         cost_function = P2PEfficientCost::Create(Ttar*tar_mean, src_mean);
       else
         cost_function = P2PCost::Create(tar_mean, src_mean);
     }
     if(time_continuous_)
-      problem_->AddResidualBlock(cost_function, ceres_loss, vel_parameters_.data(), parameters[scan_idx_src].data());
+      problem_->AddResidualBlock(cost_function, ceres_loss, parameters[scan_idx_src].data());
     else if(efficient_implementation)
       problem_->AddResidualBlock(cost_function, ceres_loss, parameters[scan_idx_src].data());
     else
       problem_->AddResidualBlock(cost_function, ceres_loss, parameters[scan_idx_tar].data(), parameters[scan_idx_src].data());
   }
+  if(time_continuous_){
+    //problem_->SetParameterBlockConstant(vel_parameters_.data());
+  }
+
+
 }
 /*std::vector<double> residuals;
         for(int i=0 ; i<associations.size() ; i++){
@@ -286,14 +298,14 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
 
 
 
-bool n_scan_normal_reg::BuildOptimizationProblem(std::vector<MapNormalPtr>& scans, const Eigen::MatrixXd& cov, const Eigen::Vector3d& guess, bool soft_constraints){
+bool n_scan_normal_reg:: BuildOptimizationProblem(std::vector<MapNormalPtr>& scans, const Eigen::MatrixXd& cov, const Eigen::Vector3d& guess, bool soft_constraints){
 
 
   std::vector<Eigen::Affine2d> Tvek(scans.size());
   problem_ = boost::shared_ptr<ceres::Problem>(new ceres::Problem());
   for(size_t i=0 ; i<scans.size() ; i++){ // project scans [targets] into world frame using transformation parameters, src is always given in the local reference frame.
     problem_->AddParameterBlock(parameters[i].data(), 3);
-    Eigen::Affine3d T = vectorToAffine3d(parameters[i][0], parameters[i][1], 0, 0, 0, parameters[i][2]);
+    Eigen::Affine3d T = vectorToAffine3d(parameters[i]);
     Tvek[i] = Eigen::Translation2d(T.translation().topRows<2>()) * T.linear().topLeftCorner<2,2>();
   }
 
@@ -302,11 +314,17 @@ bool n_scan_normal_reg::BuildOptimizationProblem(std::vector<MapNormalPtr>& scan
 
   //  ros::Time t3 = ros::Time::now();
   for(size_t i=0 ; i<scans.size() ; i++)
-    for(size_t j=0 ; j<scans.size() ; j++){
-      if( !(fixedBlock_[j]&&fixedBlock_[j]) &&i!=j )
-        AddScanPairCost(scans[i], scans[j], Tvek[i], Tvek[j], i, j);
-    }
+    for(size_t j=0 ; j<scans.size() ; j++)
+      if( !(fixedBlock_[j] && fixedBlock_[i]) && i!=j){ // if not both fixed, and i!=j
+        if( (mode_ == incremental_last_to_previous && j > i && !fixedBlock_[j])
+           || mode_ == many_to_many_refinement){ // only refine last parameter
+          AddScanPairCost(scans[i], scans[j], Tvek[i], Tvek[j], i, j);
+        }
+      }
 
+  //for(auto && as : scan_associations_){
+  //  cout<<as.first.first<<" - "<<as.first.second<<" : "<<as.second.size()<<endl;
+  //}
   if(problem_->NumResiduals()<=1)
     return false;
 
