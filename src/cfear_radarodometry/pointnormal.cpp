@@ -504,7 +504,7 @@ cell cell::TransformCopy(const Eigen::Affine2d& T){
   return c;
 }
 double cell::GetAngle(){
-  cout<<"normal: "<<snormal_<<endl;
+  //cout<<"normal: "<<snormal_<<endl;
   double alpha = atan2(snormal_(1), snormal_(0));
   return alpha;
 }
@@ -530,13 +530,18 @@ void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eige
   visualization_msgs::MarkerArray marr = Cells2Markers(cells, ros::Time::now(), frame_id, value);
   it->second.publish(marr);
   visualization_msgs::MarkerArray marr_text(marr);
-  for(size_t i = 0; i<marr.markers.size() ; i++){
+  for(size_t i = 0; i<cells.size() ; i++){
     marr_text.markers[i].ns = "debug";
 
-    marr_text.markers[i].text = "n="+std::to_string(map->GetCell(i).Nsamples_) + "\navgi=" + std::to_string(map->GetCell(i).avg_intensity_) + "\nplan=" + std::to_string(map->GetCell(i).GetPlanarity());
+    const std::string n_pnts = std::to_string(map->GetCell(i).Nsamples_);
+    const std::string planarity = std::to_string(map->GetCell(i).GetPlanarity());
+    const std::string avg_i = std::to_string(map->GetCell(i).avg_intensity_);
+    const std::string angle = std::to_string(map->GetCell(i).GetAngle());
+
+    marr_text.markers[i].text = "n="+ n_pnts + "\ni=" + avg_i + "\np=" + planarity + "\na=" + angle;
     marr_text.markers[i].type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     marr_text.markers[i].pose.position.z = 2.0;
-    marr_text.markers[i].scale.z = 1;
+    marr_text.markers[i].scale.z = 0.2;
     marr_text.markers[i].pose.position.x = cells[i].u_(0);
     marr_text.markers[i].pose.position.y = cells[i].u_(1);
   }

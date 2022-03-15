@@ -52,6 +52,8 @@ public:
   void AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr& src_local, const Eigen::Affine2d& Ttar, const Eigen::Affine2d& Tsrc, const size_t scan_idx_tar, const size_t scan_idx_src);
 
 
+
+
 private:
 
   bool BuildOptimizationProblem(std::vector<MapNormalPtr>& scans, const Eigen::MatrixXd& cov = Eigen::Matrix<double,3,3>::Identity(), const Eigen::Vector3d &guess = Eigen::Vector3d::Identity(), bool soft_constraint = false);
@@ -188,12 +190,12 @@ public:
     const Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * (src_mean_).cast<T>()) + trans_mat_src;
     const Eigen::Matrix<T,2,1> v = transformed_mean_src - transformed_mean_tar_.cast<T>();
     const Eigen::Matrix<T,2,1> n = transformed_normal_tar_.cast<T>();
-    residuals_ptr[0] = v.dot(n);
+    residuals_ptr[0] = v.dot(n)*T(weight_);
     return true;
   }
 
   static ceres::CostFunction* Create(
-      const Eigen::Vector2d& transformed_mean_tar, const Eigen::Vector2d& transformed_normal_tar, const Eigen::Vector2d& src_mean, double weight) {
+      const Eigen::Vector2d& transformed_mean_tar, const Eigen::Vector2d& transformed_normal_tar, const Eigen::Vector2d& src_mean, double weight = 1.0) {
     return new ceres::AutoDiffCostFunction<P2LEfficientCost ,1, 3>(new P2LEfficientCost (transformed_mean_tar, transformed_normal_tar, src_mean, weight));
   }
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

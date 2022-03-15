@@ -43,7 +43,7 @@ echo $current_date
 
 
 
-export STAMPED_OUTPUT_EVAL_DIR="$EVAL_OUTPUT_BASE_PATH/${FOLDER_PREFIX}/${EVALUATION_DATASET}_${EVALUATION_description}_${current_date}"
+export STAMPED_OUTPUT_EVAL_DIR="$EVAL_OUTPUT_BASE_PATH/${FOLDER_PREFIX}/${EVAL_DATASET}_${EVALUATION_description}_${current_date}"
 mkdir -p $STAMPED_OUTPUT_EVAL_DIR
 
 echo "Starting evaluation ${started} output directory ${STAMPED_OUTPUT_EVAL_DIR}"

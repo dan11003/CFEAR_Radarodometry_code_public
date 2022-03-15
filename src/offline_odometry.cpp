@@ -108,7 +108,7 @@ public:
         ros::Duration d = ros::Duration(tnow-tinit);
         static ros::Duration tot(0);
         tot +=d;
-        //usleep(1000*500);
+        usleep(1000*500);
 
         cout<<"Frame: "<<frame<<", dur: "<<d<<", avg: "<<++frame/tot.toSec()<<endl;
       }
@@ -211,8 +211,7 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
       rad_par.range_res = vm["range-res"].as<double>();
     if (vm.count("savepcd"))
       eval_par.save_pcd = true;
-    if (vm.count("filter-type"))
-      rad_par.filter_type_ = Str2filter(vm["filter-type"].as<std::string>());
+    rad_par.filter_type_ = Str2filter(vm["filter-type"].as<std::string>());
 
     par.weight_intensity_ = vm["weight_intensity"].as<bool>();;
     par.compensate = !vm["disable_compensate"].as<bool>();

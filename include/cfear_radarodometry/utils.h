@@ -61,6 +61,7 @@ void printVector(const T& t) {
     std::copy(t.cbegin(), t.cend(), std::ostream_iterator<typename T::value_type>(std::cout, ", "));
 }
 
+inline double Similarity(const double x, const double y){return 2*std::min(x,y)/(x+y);}
 
 }
 

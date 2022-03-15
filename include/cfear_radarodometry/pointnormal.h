@@ -25,6 +25,7 @@
 #include "tgmath.h"
 #include "cfear_radarodometry/statistics.h"
 #include "cfear_radarodometry/utils.h"
+
 //#include "ndt_map/NDTMapMsg.h"
 //#include "ndt_map/ndt_map.h"
 //#include "ndt_map/ndt_conversions.h"
@@ -103,7 +104,7 @@ public:
 
   std::vector<cell> GetCells(){return cells;}
 
-  cell& GetCell(const size_t i){cells[i];}
+  cell& GetCell(const size_t i){return cells[i];}
 
   //std::vector<cell*> GetClosest(cell* c, double d);
 

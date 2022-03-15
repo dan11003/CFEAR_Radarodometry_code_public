@@ -190,7 +190,7 @@ bool n_scan_normal_reg::GetCost(std::vector<MapNormalPtr>& scans, std::vector<Ei
 
 void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr& src_local, const Eigen::Affine2d& Ttar, const Eigen::Affine2d& Tsrc, const size_t scan_idx_tar, const size_t scan_idx_src){
 
-  ceres::LossFunction* ceres_loss = GetLoss();
+
 
   double angle_outlier = std::cos(M_PI/6.0);
   int_pair scan_pair = std::make_pair(scan_idx_tar, scan_idx_src);
@@ -236,6 +236,13 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
     const double time_scale = time_continuous_ ? stamps.find(ass_src_idx)->second : 0;
     const Eigen::Vector2d tar_mean = target_local->GetMean2d(ass_tar_idx);
     const Eigen::Vector2d src_mean = src_local->GetMean2d(ass_src_idx);
+    const double n_src = src_local->GetCell(ass_src_idx).Nsamples_;
+    const double n_tar = src_local->GetCell(ass_src_idx).Nsamples_;
+    const double similarity = Similarity(n_tar, n_src);
+    const double costScale = 1.0;
+    ceres::LossFunction* ceres_loss = new ceres::ScaledLoss(GetLoss(), costScale, ceres::TAKE_OWNERSHIP);
+
+
 
     ceres::CostFunction* cost_function;
     if(cost_ == cost_metric::P2L){
@@ -245,7 +252,7 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
       const Eigen::Vector2d tar_normal = target_local->GetNormal2d(ass_tar_idx);
       //double similarity_weight = fabs(src_normal_trans.dot(tar_normal));
       if(efficient_implementation)
-        cost_function = P2LEfficientCost::Create(Ttar*tar_mean, Ttar.linear()*tar_normal, src_mean, 1.0);
+        cost_function = P2LEfficientCost::Create(Ttar*tar_mean, Ttar.linear()*tar_normal, src_mean, similarity);
       else {
         cost_function = P2LCost::Create(tar_mean, tar_normal, src_mean, 1.0);
       }
@@ -268,6 +275,7 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
       else
         cost_function = P2PCost::Create(tar_mean, src_mean);
     }
+
     if(time_continuous_)
       problem_->AddResidualBlock(cost_function, ceres_loss, parameters[scan_idx_src].data());
     else if(efficient_implementation)
