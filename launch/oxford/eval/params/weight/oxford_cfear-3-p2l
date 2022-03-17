@@ -1,29 +1,28 @@
 #!/bin/bash
 
 export EVAL_OUTPUT_BASE_PATH="${BAG_LOCATION}/CFEAR_EVAL"
-export BAG_BASE_PATH="${BAG_LOCATION}/Mulran"
-export EVAL_DATASET="mulran"
-export NR_WORKERS="9"
+export BAG_BASE_PATH="${BAG_LOCATION}/oxford-eval-sequences"
+export EVAL_DATASET="oxford"
+export NR_WORKERS="8"
 export KITTI_DIR=`rospack find kitti-odom-eval`
-export EVALUATION_description="cfear-3"
-export EVALUATION_sequence="KAIST01 KAIST02 KAIST03 DCC01 DCC02 DCC03 Riverside01 Riverside02 Riverside03"
-
-export EVALUATION_radar_ccw="true"
+export EVALUATION_description="oxford-cfear3-p2l"
+export EVALUATION_sequence="2019-01-10-12-32-52-radar-oxford-10k 2019-01-16-13-09-37-radar-oxford-10k 2019-01-17-13-26-39-radar-oxford-10k 2019-01-18-14-14-42-radar-oxford-10k 2019-01-18-15-20-12-radar-oxford-10k 2019-01-16-11-53-11-radar-oxford-10k 2019-01-10-11-46-21-radar-oxford-10k 2019-01-18-14-46-59-radar-oxford-10k"
+export EVALUATION_radar_ccw="false"
 export EVALUATION_soft_constraint="false"
 export EVALUATION_disable_compensate="false"
-export EVALUATION_cost_type="P2P"
+export EVALUATION_cost_type="P2L"
 export EVALUATION_submap_scan_size="4"
 export EVALUATION_registered_min_keyframe_dist="1.5"
 export EVALUATION_res="3" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
 export EVALUATION_kstrong="40" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
 export EVALUATION_zmin="60" # between 1 and 100
-export EVALUATION_RANGE_RES="0.0595238" # between 1 and 100
+export EVALUATION_RANGE_RES="0.0438" 
 export EVALUATION_loss_limit="0.1"
 export EVALUATION_loss="Huber"
 export EVALUATION_covar_scale="1"
 export EVALUATION_regularization="1"
 export EVALUATION_weight_intensity="true"
-
+export EVALUATION_weight_option="0 1 2 3"
 
 echo "-----Loaded PARAMETER LIST -------"
  printf 'Sequence: %s\n' "${EVALUATION_sequence[@]}"

@@ -23,7 +23,6 @@
 
 namespace CFEAR_Radarodometry{
 
-
 /* Registration type */
 class n_scan_normal_reg : public Registration{
 
@@ -33,7 +32,7 @@ public:
 
   n_scan_normal_reg();
 
-  n_scan_normal_reg(const cost_metric& cost, loss_type loss=Huber, double loss_limit=0.1);
+  n_scan_normal_reg(const cost_metric& cost, loss_type loss = Huber, double loss_limit = 0.1, const weightoption opt = weightoption::Uniform);
 
   bool Register(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d>& reg_cov, bool soft_constraints = false);
 
@@ -126,11 +125,10 @@ protected:
 class P2LCost : public RegistrationCost{
 public:
 
-  P2LCost (const Eigen::Vector2d& target_mean, const Eigen::Vector2d& target_normal, const Eigen::Vector2d& src_mean, const double weight) :
+  P2LCost (const Eigen::Vector2d& target_mean, const Eigen::Vector2d& target_normal, const Eigen::Vector2d& src_mean) :
     tar_mean_(target_mean),
     tar_normal_(target_normal),
-    src_mean_(src_mean),
-    weight_(weight) {}
+    src_mean_(src_mean){}
 
   template <typename T>
   bool operator()(const T*  Ta,
@@ -157,16 +155,15 @@ public:
   }
 
   static ceres::CostFunction* Create(
-      const Eigen::Vector2d& target_mean, const Eigen::Vector2d& target_normal, const Eigen::Vector2d& src_mean, double scale_similarity) {
-    return new ceres::AutoDiffCostFunction<P2LCost ,1, 3, 3>(new P2LCost (target_mean, target_normal, src_mean, scale_similarity));
+      const Eigen::Vector2d& target_mean, const Eigen::Vector2d& target_normal, const Eigen::Vector2d& src_mean) {
+    return new ceres::AutoDiffCostFunction<P2LCost ,1, 3, 3>(new P2LCost (target_mean, target_normal, src_mean));
   }
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
 
-    const Eigen::Vector2d tar_mean_;
+  const Eigen::Vector2d tar_mean_;
   const Eigen::Vector2d tar_normal_;
   const Eigen::Vector2d src_mean_;
-  const double weight_;
 };
 
 
@@ -174,11 +171,11 @@ public:
 class P2LEfficientCost : public RegistrationCost{
 public:
 
-  P2LEfficientCost (const Eigen::Vector2d& transformed_mean_tar, const Eigen::Vector2d& transformed_normal_tar, const Eigen::Vector2d& src_mean, double weight) :
+  P2LEfficientCost (const Eigen::Vector2d& transformed_mean_tar, const Eigen::Vector2d& transformed_normal_tar, const Eigen::Vector2d& src_mean) :
     transformed_mean_tar_(transformed_mean_tar),
     transformed_normal_tar_(transformed_normal_tar),
-    src_mean_(src_mean),
-    weight_(weight)  {}
+    src_mean_(src_mean)
+    {}
 
   template <typename T>
   bool operator()(const T*  Tb,
@@ -190,13 +187,13 @@ public:
     const Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * (src_mean_).cast<T>()) + trans_mat_src;
     const Eigen::Matrix<T,2,1> v = transformed_mean_src - transformed_mean_tar_.cast<T>();
     const Eigen::Matrix<T,2,1> n = transformed_normal_tar_.cast<T>();
-    residuals_ptr[0] = v.dot(n)*T(weight_);
+    residuals_ptr[0] = v.dot(n);
     return true;
   }
 
   static ceres::CostFunction* Create(
-      const Eigen::Vector2d& transformed_mean_tar, const Eigen::Vector2d& transformed_normal_tar, const Eigen::Vector2d& src_mean, double weight = 1.0) {
-    return new ceres::AutoDiffCostFunction<P2LEfficientCost ,1, 3>(new P2LEfficientCost (transformed_mean_tar, transformed_normal_tar, src_mean, weight));
+      const Eigen::Vector2d& transformed_mean_tar, const Eigen::Vector2d& transformed_normal_tar, const Eigen::Vector2d& src_mean) {
+    return new ceres::AutoDiffCostFunction<P2LEfficientCost ,1, 3>(new P2LEfficientCost (transformed_mean_tar, transformed_normal_tar, src_mean));
   }
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
@@ -204,7 +201,6 @@ public:
     const Eigen::Vector2d transformed_mean_tar_;
   const Eigen::Vector2d transformed_normal_tar_;
   const Eigen::Vector2d src_mean_;
-  const double weight_;
 };
 
 

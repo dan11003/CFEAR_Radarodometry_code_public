@@ -78,6 +78,8 @@ public:
     std::string odometry_link_id = "world";
     std::string input_points_topic = "/Navtech/Filtered";
     std::string cost_type = "P2L";
+    weightoption weight_opt = weightoption::Uniform;
+
 
     bool visualize = true;
     int submap_scan_size = 3;
@@ -160,6 +162,7 @@ public:
       stringStream << "regularization, "<<std::to_string(regularization_)<<endl;
       stringStream << "weight intensity, "<<std::boolalpha<<weight_intensity_<<endl;
       stringStream << "publish_tf, "<<std::boolalpha<<publish_tf_<<endl;
+      stringStream << "Weight, "<<weight_opt<<endl;
       return stringStream.str();
     }
   };

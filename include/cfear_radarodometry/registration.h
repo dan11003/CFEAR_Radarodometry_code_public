@@ -36,6 +36,8 @@
 
 namespace CFEAR_Radarodometry {
 
+
+
 class Registration;
 
 typedef std::vector<std::pair< Eigen::Affine3d, pcl::PointCloud<pcl::PointXYZI> > > reference_scan;
@@ -45,6 +47,8 @@ typedef Eigen::Matrix<double,6,6> Matrix6d;
 typedef boost::shared_ptr<CFEAR_Radarodometry::Registration> regPtr;
 
 typedef enum reg_mode{incremental_last_to_previous, many_to_many_refinement} regmode;
+
+typedef enum weight_options{Uniform = 0, Sim_N = 1, Sim_direciton = 2, Sim_scale = 3}weightoption;
 
 const Matrix6d Identity66 = Matrix6d::Identity();
 
@@ -82,14 +86,27 @@ public:
 
   void SetMode(const regmode mode){mode_ = mode;}
 
+  class Weights
+  {
+  public:
 
+    Weights(double sim_n, double sim_dir, double sim_scale) : sim_n_(sim_n), sim_dir_(sim_dir), sim_scale_(sim_scale){}
 
+    double GetWeight(const weightoption opt);
 
-  std::map<int_pair,std::vector<int_pair> >  scan_associations_;
+    double sim_n_, sim_dir_, sim_scale_;
+  };
+
+  weightoption weight_opt_ = weightoption::Uniform;
+  std::map<int_pair, std::vector<Weights> >  weight_associations_;
+
+  std::map<int_pair, std::vector<int_pair> > scan_associations_;
+
 
   ceres::Solver::Summary summary_;
 
 protected:
+
 
   ceres::LossFunction* GetLoss();
 

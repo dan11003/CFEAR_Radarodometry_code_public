@@ -23,8 +23,8 @@ OdometryKeyframeFuser::OdometryKeyframeFuser(const Parameters& pars, bool disabl
   //radar_reg =
   radar_reg = boost::shared_ptr<CFEAR_Radarodometry::n_scan_normal_reg>(new n_scan_normal_reg(Str2Cost(par.cost_type),
                                                                                               Str2loss(par.loss_type_),
-                                                                                              par.loss_limit_
-                                                                                              ));
+                                                                                              par.loss_limit_,
+                                                                                              par.weight_opt));
 
   radar_reg->SetD2dPar(par.covar_scale_,par.regularization_);
 

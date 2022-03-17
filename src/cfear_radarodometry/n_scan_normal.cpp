@@ -14,11 +14,12 @@ n_scan_normal_reg::n_scan_normal_reg(){
 
 }
 
-n_scan_normal_reg::n_scan_normal_reg(const cost_metric &cost,loss_type loss, double loss_limit):n_scan_normal_reg()
+n_scan_normal_reg::n_scan_normal_reg(const cost_metric &cost,loss_type loss, double loss_limit, const weightoption opt) : n_scan_normal_reg()
 {
   cost_ = cost;
   loss_ = loss;
   loss_limit_ = loss_limit;
+  weight_opt_ = opt;
 }
 void n_scan_normal_reg::GetSurface(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, std::vector<Matrix6d> &reg_cov, bool soft_constraints, Eigen::MatrixXd& surface, double res, int width){
   const size_t n_scans = scans.size();
@@ -34,6 +35,7 @@ void n_scan_normal_reg::GetSurface(std::vector<MapNormalPtr>& scans, std::vector
   Affine3dToEigVectorXYeZ(Tsrc.back(), guess);
 
   scan_associations_.clear();
+  weight_associations_.clear();
   bool success = BuildOptimizationProblem(scans, reg_cov.back(), guess, soft_constraints);
   int i = 0, j = 0;
   int pixels = std::ceil(2.0*width/res)+1;
@@ -94,6 +96,7 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
   double prev_score = DBL_MAX;
   for(itr = 1 ; itr<=8 && success; itr++){
     scan_associations_.clear();
+    weight_associations_.clear();
     success = BuildOptimizationProblem(scans, reg_cov.back(), guess, soft_constraints);
     if(!success)
       break;
@@ -170,6 +173,7 @@ bool n_scan_normal_reg::GetCost(std::vector<MapNormalPtr>& scans, std::vector<Ei
     assert(scans[i]!=nullptr);
   }
   scan_associations_.clear();
+  weight_associations_.clear();
 
   if(!BuildOptimizationProblem(scans))
     return false;
@@ -205,11 +209,8 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
         exit(0);
       }
 
-      double tfactor = src_local->GetCellRelTimeStamp(src_idx, ccw_);
+      double tfactor = src_local->GetCellRelTimeStamp(src_idx, ccw_); // not used ATM
       stamps[src_idx] = tfactor;
-      //const double vel_x = current_parameters_[0] - prev_parameters_[0];//parameters.back()[0] - prev_parameters_[0];
-      //const double vel_y = current_parameters_[1] - prev_parameters_[1];//parameters.back()[1] - prev_parameters_[1];
-      //const double vel_t = current_parameters_[2] - prev_parameters_[2]; //parameters.back()[2] - prev_parameters_[2];
       Eigen::Affine2d  Tcomp = vectorToAffine2d(tfactor*vel_parameters_[0], tfactor*vel_parameters_[1], tfactor*vel_parameters_[2]);
       Tsrctotar = Ttar.inverse()*Tsrc*Tcomp; //  Target frame <- odom frame <- corrected distortion <- observation in src frame
     }
@@ -221,26 +222,36 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
     for(auto &&tar_idx : tar_idx_nearby){
       Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(src_idx);// src.block<2,1>(0,src_idx);
       Eigen::Vector2d tar_normal = target_local->GetNormal2d(tar_idx);  //.block<2,1>(0,tar_idx);
-      if(src_normal_trans.dot(tar_normal)>angle_outlier){
+      const double direction_similarity = src_normal_trans.dot(tar_normal);
+      if(direction_similarity > angle_outlier){
+
+        const double n_src = src_local->GetCell(src_idx).Nsamples_;
+        const double n_tar = target_local->GetCell(tar_idx).Nsamples_;
+        const double n_similarity = Similarity(n_tar, n_src);
+
+        const double scale_src = src_local->GetCell(src_idx).scale_;
+        const double scale_tar = target_local->GetCell(tar_idx).scale_;
+        const double scale_sim = Similarity(scale_src,scale_tar);
+
+        weight_associations_[scan_pair].push_back(Weights(n_similarity, direction_similarity, scale_sim));
         scan_associations_[scan_pair].push_back(std::make_pair(tar_idx,src_idx));
+
         if(++n_terms==max_n_terms)
           break;
       }
     }
   }
 
-
+  // For now this only interates over one correspondance
   for(size_t i=0 ; i<scan_associations_[scan_pair].size() ; i++){
     const size_t ass_tar_idx = scan_associations_[scan_pair][i].first;
     const size_t ass_src_idx = scan_associations_[scan_pair][i].second;
     const double time_scale = time_continuous_ ? stamps.find(ass_src_idx)->second : 0;
     const Eigen::Vector2d tar_mean = target_local->GetMean2d(ass_tar_idx);
     const Eigen::Vector2d src_mean = src_local->GetMean2d(ass_src_idx);
-    const double n_src = src_local->GetCell(ass_src_idx).Nsamples_;
-    const double n_tar = src_local->GetCell(ass_src_idx).Nsamples_;
-    const double similarity = Similarity(n_tar, n_src);
-    const double costScale = 1.0;
-    ceres::LossFunction* ceres_loss = new ceres::ScaledLoss(GetLoss(), costScale, ceres::TAKE_OWNERSHIP);
+    const double weight_after_loss = weight_associations_[scan_pair][i].GetWeight(weight_opt_);
+    //cout << "weight_after_loss: " << weight_after_loss <<", weight_opt_" <<weight_opt_<< endl;
+    ceres::LossFunction* ceres_loss = new ceres::ScaledLoss(GetLoss(), weight_after_loss, ceres::TAKE_OWNERSHIP); // Important, loss should be applied after Mr. Huber
 
 
 
@@ -252,9 +263,9 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
       const Eigen::Vector2d tar_normal = target_local->GetNormal2d(ass_tar_idx);
       //double similarity_weight = fabs(src_normal_trans.dot(tar_normal));
       if(efficient_implementation)
-        cost_function = P2LEfficientCost::Create(Ttar*tar_mean, Ttar.linear()*tar_normal, src_mean, similarity);
+        cost_function = P2LEfficientCost::Create(Ttar*tar_mean, Ttar.linear()*tar_normal, src_mean);
       else {
-        cost_function = P2LCost::Create(tar_mean, tar_normal, src_mean, 1.0);
+        cost_function = P2LCost::Create(tar_mean, tar_normal, src_mean);
       }
     }
     else if( cost_ == cost_metric::P2D){

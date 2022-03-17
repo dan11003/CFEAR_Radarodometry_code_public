@@ -108,7 +108,7 @@ public:
         ros::Duration d = ros::Duration(tnow-tinit);
         static ros::Duration tot(0);
         tot +=d;
-        usleep(1000*500);
+        //usleep(1000*500);
 
         cout<<"Frame: "<<frame<<", dur: "<<d<<", avg: "<<++frame/tot.toSec()<<endl;
       }
@@ -161,6 +161,7 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("dataset", po::value<std::string>()->default_value("oxford"), "name of dataset, take special actions depending on radar file format etc")
         ("filter-type", po::value<std::string>()->default_value("kstrong"), "filter type")
         ("method_name", po::value<std::string>()->default_value("method"), "method name")
+        ("weight_option", po::value<int>()->default_value(0), "how to weight residuals")
         ("bag_path", po::value<std::string>()->default_value("/home/daniel/rosbag/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/radar/2019-01-10-12-32-52-radar-oxford-10k.bag"), "bag file to open");
 
     po::variables_map vm;
@@ -211,12 +212,16 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
       rad_par.range_res = vm["range-res"].as<double>();
     if (vm.count("savepcd"))
       eval_par.save_pcd = true;
+    if (vm.count("weight_option"))
+      par.weight_opt = static_cast<weightoption>(vm["weight_option"].as<int>());
+
     rad_par.filter_type_ = Str2filter(vm["filter-type"].as<std::string>());
 
     par.weight_intensity_ = vm["weight_intensity"].as<bool>();;
     par.compensate = !vm["disable_compensate"].as<bool>();
     par.soft_constraint= vm["soft_constraint"].as<bool>();
     par.radar_ccw = vm["radar_ccw"].as<bool>();
+
 }
 int main(int argc, char **argv)
 {
@@ -225,11 +230,6 @@ int main(int argc, char **argv)
   radarDriver::Parameters rad_pars;
   EvalTrajectory::Parameters eval_pars;
 
-  //timing.Document("Filtering",0);
-  //timing.Document("Registration",0);
-  //timing.Document("Surface points",0);
-  //timing.Document("Filtered points",0);
-  //timing.Document("velocity",0);
 
   eval_parameters eval_p;
   ReadOptions(argc, argv, odom_pars, rad_pars, eval_pars, eval_p);

@@ -64,6 +64,15 @@ loss_type Str2loss(const std::string& loss){
     return loss_type::Huber;
 }
 
+double Registration::Weights::GetWeight(const weightoption opt){
+  switch (opt) {
+  case weightoption::Uniform:        return 1.0;
+  case weightoption::Sim_N:          return sim_n_;
+  case weightoption::Sim_direciton : return sim_dir_;
+  case weightoption::Sim_scale:      return sim_scale_;
+  }
+}
+
 ceres::LossFunction* Registration::GetLoss(){
   ceres::LossFunction* ceres_loss = nullptr;
   if(loss_ == Huber)

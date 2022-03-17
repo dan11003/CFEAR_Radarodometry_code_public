@@ -210,13 +210,13 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /current_normals
       Name: MarkerArray
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -245,7 +245,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 31.376428604125977
+      Distance: 97.09771728515625
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -260,10 +260,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.994796872138977
+      Pitch: 1.0247968435287476
       Target Frame: sensor_est
       Value: ThirdPersonFollower (rviz)
-      Yaw: 1.6303961277008057
+      Yaw: 2.6803996562957764
     Saved: ~
 Window Geometry:
   Displays:
