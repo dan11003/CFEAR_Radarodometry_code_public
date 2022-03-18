@@ -139,7 +139,7 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("res", po::value<double>()->default_value(3.5), "res")
         ("range-res", po::value<double>()->default_value(0.0438), "range resolution")
         ("min_distance", po::value<double>()->default_value(2.5), "min sensor distance")
-        ("max_distance", po::value<double>()->default_value(20), "mib sensor distance ")
+        ("max_distance", po::value<double>()->default_value(200), "mib sensor distance ")
         ("submap_scan_size", po::value<int>()->default_value(3), "submap_scan_size")
         ("weight_intensity", po::value<bool>()->default_value(false),"weight_intensity")
         ("k_strongest", po::value<int>()->default_value(12), "kstrongest points filtering")

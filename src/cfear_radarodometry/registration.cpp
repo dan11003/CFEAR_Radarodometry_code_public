@@ -66,10 +66,13 @@ loss_type Str2loss(const std::string& loss){
 
 double Registration::Weights::GetWeight(const weightoption opt){
   switch (opt) {
-  case weightoption::Uniform:        return 1.0;
-  case weightoption::Sim_N:          return sim_n_;
-  case weightoption::Sim_direciton : return sim_dir_;
-  case weightoption::Sim_scale:      return sim_scale_;
+  case weightoption::Uniform:          return 1.0;
+  case weightoption::Sim_N:            return Similarity(N1_,N2_);
+  case weightoption::Sim_direciton :   return sim_dir_;
+  case weightoption::Sim_scale:        return Similarity(plan1_, plan2_);
+  case weightoption::Planarity:        return std::min(plan1_, plan2_);
+  case weightoption::Combined_weights: return GetWeight(Sim_N) + GetWeight(Sim_direciton) + GetWeight(Sim_scale) + GetWeight(Planarity);
+
   }
 }
 
@@ -83,7 +86,7 @@ ceres::LossFunction* Registration::GetLoss(){
     ceres_loss = new ceres::SoftLOneLoss(loss_limit_);
   else if( loss_ == Tukey)
     ceres_loss = new ceres::TukeyLoss(loss_limit_);
-  else if(loss_ == Combined){
+  else if(loss_ == losstype::Combined){
     ceres::LossFunction* f = new ceres::HuberLoss(1);
     ceres::LossFunction* g = new ceres::CauchyLoss(1);
     ceres_loss = new ceres::ComposedLoss(f, ceres::DO_NOT_TAKE_OWNERSHIP, g, ceres::DO_NOT_TAKE_OWNERSHIP);
