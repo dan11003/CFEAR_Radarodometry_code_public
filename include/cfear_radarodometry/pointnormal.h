@@ -54,7 +54,7 @@ public:
 
   double GetAngle();
 
-  double GetPlanarity(){return 1.0 - lambda_min/(lambda_min + lambda_max);}
+  double GetPlanarity(){return 1 - 2*lambda_min/(lambda_min + lambda_max);}
 
   static cell GetIdentityCell(const Eigen::Vector2d& u, const double intensity) { return cell(u,intensity); } // Use only for raw data
 
