@@ -222,18 +222,16 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
     for(auto &&tar_idx : tar_idx_nearby){
       Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(src_idx);// src.block<2,1>(0,src_idx);
       Eigen::Vector2d tar_normal = target_local->GetNormal2d(tar_idx);  //.block<2,1>(0,tar_idx);
-      const double direction_similarity = fabs(src_normal_trans.dot(tar_normal));
+      const double direction_similarity = std::max(src_normal_trans.dot(tar_normal), 0.0);
       //if(direction_similarity > angle_outlier){
 
       const double n_src = src_local->GetCell(src_idx).Nsamples_;
       const double n_tar = target_local->GetCell(tar_idx).Nsamples_;
-      const double n_similarity = Similarity(n_tar, n_src);
 
-      const double scale_src = src_local->GetCell(src_idx).scale_;
-      const double scale_tar = target_local->GetCell(tar_idx).scale_;
-      const double scale_sim = Similarity(scale_src,scale_tar);
+      const double plan_src = src_local->GetCell(src_idx).GetPlanarity();
+      const double plan_tar = target_local->GetCell(tar_idx).GetPlanarity();
 
-      weight_associations_[scan_pair].push_back(Weights(n_similarity, direction_similarity, scale_sim));
+      weight_associations_[scan_pair].push_back(Weights(n_src, n_tar, direction_similarity, plan_src, plan_tar));
       scan_associations_[scan_pair].push_back(std::make_pair(tar_idx,src_idx));
 
       if(++n_terms==max_n_terms)

@@ -48,7 +48,7 @@ typedef boost::shared_ptr<CFEAR_Radarodometry::Registration> regPtr;
 
 typedef enum reg_mode{incremental_last_to_previous, many_to_many_refinement} regmode;
 
-typedef enum weight_options{Uniform = 0, Sim_N = 1, Sim_direciton = 2, Sim_scale = 3}weightoption;
+typedef enum weight_options{Uniform = 0, Sim_N = 1, Sim_direciton = 2, Sim_scale = 3, Planarity = 4, Combined_weights = 5}weightoption;
 
 const Matrix6d Identity66 = Matrix6d::Identity();
 
@@ -90,11 +90,15 @@ public:
   {
   public:
 
-    Weights(double sim_n, double sim_dir, double sim_scale) : sim_n_(sim_n), sim_dir_(sim_dir), sim_scale_(sim_scale){}
+    Weights(double N1, double N2, double sim_dir, double plan1, double plan2) : N1_(N1), N2_(N2), sim_dir_(sim_dir), plan1_(plan1), plan2_(plan2){}
 
     double GetWeight(const weightoption opt);
 
-    double sim_n_, sim_dir_, sim_scale_;
+    double Similarity(const double x, const double y){return 2*std::min(x,y)/(x+y);}
+
+    double N1_, N2_;
+    double sim_dir_;
+    double plan1_, plan2_;
   };
 
   weightoption weight_opt_ = weightoption::Uniform;
