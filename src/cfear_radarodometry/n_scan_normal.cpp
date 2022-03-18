@@ -232,6 +232,10 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
         const double scale_src = src_local->GetCell(src_idx).scale_;
         const double scale_tar = target_local->GetCell(tar_idx).scale_;
         const double scale_sim = Similarity(scale_src,scale_tar);
+        if(scale_sim <0 || scale_sim > 1.0){
+          cout<<scale_sim<<", "<<scale_src<<", "<<scale_tar<<endl;;
+          cout<<"tar normal: "<<tar_normal.transpose()<<", src normal"<<src_normal_trans.transpose()<<endl;;
+        }
 
         weight_associations_[scan_pair].push_back(Weights(n_similarity, direction_similarity, scale_sim));
         scan_associations_[scan_pair].push_back(std::make_pair(tar_idx,src_idx));
@@ -336,7 +340,7 @@ bool n_scan_normal_reg:: BuildOptimizationProblem(std::vector<MapNormalPtr>& sca
     for(size_t j=0 ; j<scans.size() ; j++)
       if( !(fixedBlock_[j] && fixedBlock_[i]) && i!=j){ // if not both fixed, and i!=j
         if( (mode_ == incremental_last_to_previous && j > i && !fixedBlock_[j])
-           || mode_ == many_to_many_refinement){ // only refine last parameter
+            || mode_ == many_to_many_refinement){ // only refine last parameter
           AddScanPairCost(scans[i], scans[j], Tvek[i], Tvek[j], i, j);
         }
       }

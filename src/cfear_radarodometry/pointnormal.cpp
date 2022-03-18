@@ -42,12 +42,19 @@ bool cell::ComputeNormal(const Eigen::Vector2d& origin)
   snormal_ = es.eigenvectors().col(0);
   orth_normal = es.eigenvectors().col(1);
   lambda_min = es.eigenvalues()[0];
-  lambda_max = es.eigenvalues()[1];
-  const double condition_number = lambda_max/lambda_min;
+  lambda_max =  es.eigenvalues()[1];
+  /*if(lambda_min < 0 || lambda_max < 0){
+    cout<<cov_<<endl;
+    cout<<"l1: "<<lambda_min<<", l2"<<lambda_max<<endl;
+  }*/
+  //lambda_min = std::min(l1,l2);
+  //lambda_max = std::max(l1,l2)
+
+  const double condition_number = fabs(lambda_max/lambda_min);
   const double determinant = lambda_max*lambda_min;
   const double det_tolerance = 0.00001;
-  const bool cov_reasonable = (condition_number <= 10000) && (determinant > det_tolerance); // one side is not unproportionally larger than the other and matrix is positive semidefinite
-  scale_ = log(condition_number/2.0) ; //Used for visualization - ranges from 0.1
+  const bool cov_reasonable = (condition_number <= 10000) && (determinant > det_tolerance) && lambda_min > 0 && lambda_max > 0; // one side is not unproportionally larger than the other and matrix is positive semidefinite
+  scale_ = condition_number ; //Used for visualization - ranges from 0.1
 
   Eigen::Vector2d Po_u = origin - u_;
   if(snormal_.dot(Po_u)<0)

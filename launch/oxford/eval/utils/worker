@@ -19,10 +19,11 @@ EVALUATION_loss_lim_arr13=($EVALUATION_loss_limit)
 EVALUATION_covar_scale_arr14=($EVALUATION_covar_scale)
 EVALUATION_regularization_arr15=($EVALUATION_regularization)
 EVALUATION_weight_intensity_arr16=($EVALUATION_weight_intensity)
+EVALUATION_weight_res_opt_arr17=($EVALUATION_weight_option)
 
 
 
-export EVALUATIONS_PARAMETER_SET_SIZE=$(( ${#EVALUATION_sequence_arr1[@]} * ${#EVALUATION_radar_ccw_arr3[@]} * ${#EVALUATION_soft_constraint_arr4[@]}* ${#EVALUATION_disable_compensate_arr5[@]}* ${#EVALUATION_cost_type_arr6[@]}* ${#EVALUATION_submap_scan_size_arr7[@]}* ${#EVALUATION_registered_min_keyframe_dist_arr8[@]}* ${#EVALUATION_res_arr9[@]}* ${#EVALUATION_kstrong_arr10[@]}* ${#EVALUATION_zmin_arr11[@]}* ${#EVALUATION_loss_arr12[@]}* ${#EVALUATION_loss_lim_arr13[@]}* ${#EVALUATION_covar_scale_arr14[@]}* ${#EVALUATION_regularization_arr15[@]}* ${#EVALUATION_weight_intensity_arr16[@]} ))
+export EVALUATIONS_PARAMETER_SET_SIZE=$(( ${#EVALUATION_sequence_arr1[@]} * ${#EVALUATION_radar_ccw_arr3[@]} * ${#EVALUATION_soft_constraint_arr4[@]}* ${#EVALUATION_disable_compensate_arr5[@]}* ${#EVALUATION_cost_type_arr6[@]}* ${#EVALUATION_submap_scan_size_arr7[@]}* ${#EVALUATION_registered_min_keyframe_dist_arr8[@]}* ${#EVALUATION_res_arr9[@]}* ${#EVALUATION_kstrong_arr10[@]}* ${#EVALUATION_zmin_arr11[@]}* ${#EVALUATION_loss_arr12[@]}* ${#EVALUATION_loss_lim_arr13[@]}* ${#EVALUATION_covar_scale_arr14[@]}* ${#EVALUATION_regularization_arr15[@]}* ${#EVALUATION_weight_intensity_arr16[@]}* ${#EVALUATION_weight_res_opt_arr17[@]} ))
 
 export EVAL_PER_WORKER=$((EVALUATIONS_PARAMETER_SET_SIZE / NR_WORKERS))
 #Output folder: ${OUTPUT_FOLDER}
@@ -77,23 +78,26 @@ do
                                                     #echo "${regularization}"
                                                         for weight_intensity in "${EVALUATION_weight_intensity_arr16[@]}"
                                                         do
-                                                            #echo "${weight_intensity}"
+                                                           for weight_res_opt in "${EVALUATION_weight_res_opt_arr17[@]}"
+                                                           do
 
-                                                            job_nr=$((job_nr+1))
-                                                            responsible_thread=$((job_nr%$NR_WORKERS +1))
-                                                            if [ "${responsible_thread}" = "${thread_index}" ]
-                                                            then
+
+                                                                job_nr=$((job_nr+1))
+                                                                responsible_thread=$((job_nr%$NR_WORKERS +1))
+                                                                if [ "${responsible_thread}" = "${thread_index}" ]
+                                                                then
 
                                                                     echo "Worker ${thread_index} job: ${worker_job_nr}/${EVAL_PER_WORKER} (job${job_nr}/${EVALUATIONS_PARAMETER_SET_SIZE})"
                                                                     JOB_FOLDER="${OUTPUT_FOLDER}/job_${job_nr}"
                                                                     worker_job_nr=$((worker_job_nr+1))
                                                                     mkdir -p $JOB_FOLDER
-                                                                    ./execute_sequence ${seq} ${JOB_FOLDER} ${ccw} ${sc} ${comp} ${cost} ${keyframes} ${dist} ${res} ${kstrong} ${job_nr} ${zmin} ${loss} ${loss_lim} ${cov_scale} ${regularization} ${weight_intensity} ${PARAMETER_FILE}
+                                                                    ./utils/execute_sequence ${seq} ${JOB_FOLDER} ${ccw} ${sc} ${comp} ${cost} ${keyframes} ${dist} ${res} ${kstrong} ${job_nr} ${zmin} ${loss} ${loss_lim} ${cov_scale} ${regularization} ${weight_intensity} ${weight_res_opt} ${PARAMETER_FILE}
                                                                     #kitti_dir=`rospack find kitti-odom-eval`
                                                                     eval="$KITTI_DIR/python/eval_odom.py --dir ${JOB_FOLDER} --align 6dof --force yes"
                                                                     #echo "eval command: $eval"
                                                                     python3 $eval >/dev/null
-                                                            fi
+                                                                fi
+                                                           done
                                                        done
 						   done
 						done
