@@ -20,5 +20,5 @@ pars="--sequence ${SEQUENCE} --radar_ccw $3 --soft_constraint $4 --disable_compe
 
 echo "|||||Estimating odometry with parameters: ${pars}||||"
 
-rosrun cfear_radarodometry offline_odometry __name:="odometry_${JOB_NR}" $pars  #> /dev/null
+rosrun cfear_radarodometry offline_odometry __name:="odometry_${JOB_NR}" $pars  > /dev/null
 
