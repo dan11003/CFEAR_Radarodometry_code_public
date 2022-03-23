@@ -54,7 +54,7 @@ bool cell::ComputeNormal(const Eigen::Vector2d& origin)
   const double determinant = lambda_max*lambda_min;
   const double det_tolerance = 0.00001;
   const bool cov_reasonable = (condition_number <= 10000) && (determinant > det_tolerance) && lambda_min > 0 && lambda_max > 0; // one side is not unproportionally larger than the other and matrix is positive semidefinite
-  scale_ = condition_number ; //Used for visualization - ranges from 0.1
+  scale_ = log(1.0 + condition_number/2 ); //Used for visualization - ranges from 0.1
 
   Eigen::Vector2d Po_u = origin - u_;
   if(snormal_.dot(Po_u)<0)
