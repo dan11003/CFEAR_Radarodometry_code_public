@@ -79,7 +79,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 0; 0; 0
-      Max Intensity: 135
+      Max Intensity: 134
       Min Color: 255; 255; 255
       Min Intensity: 60
       Name: Map - PointCloud2
@@ -109,7 +109,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 135
+      Max Intensity: 134
       Min Color: 0; 0; 0
       Min Intensity: 60
       Name: Latest scan Pt- PointCloud2
@@ -210,13 +210,14 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /current_normals
       Name: MarkerArray
       Namespaces:
-        {}
+        debug: true
+        normal: true
       Queue Size: 100
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -245,25 +246,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 156.65234375
+      Distance: 85.3442153930664
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 6.872128486633301
-        Y: 8.385387420654297
+        X: -6.168085098266602
+        Y: 6.999175548553467
         Z: 3.4202414099127054e-5
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5247962474822998
+      Pitch: 1.5347962379455566
       Target Frame: sensor_est
       Value: ThirdPersonFollower (rviz)
-      Yaw: 1.3303980827331543
+      Yaw: 3.190399408340454
     Saved: ~
 Window Geometry:
   Displays:
