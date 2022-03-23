@@ -3,7 +3,7 @@
 export EVAL_OUTPUT_BASE_PATH="${BAG_LOCATION}/CFEAR_EVAL"
 export BAG_BASE_PATH="${BAG_LOCATION}/oxford-eval-sequences"
 export EVAL_DATASET="oxford"
-export NR_WORKERS="8"
+export NR_WORKERS="12"
 export KITTI_DIR=`rospack find kitti-odom-eval`
 export EVALUATION_description="cfear1"
 export EVALUATION_sequence="2019-01-10-12-32-52-radar-oxford-10k 2019-01-16-13-09-37-radar-oxford-10k 2019-01-17-13-26-39-radar-oxford-10k 2019-01-18-14-14-42-radar-oxford-10k 2019-01-18-15-20-12-radar-oxford-10k 2019-01-16-11-53-11-radar-oxford-10k 2019-01-10-11-46-21-radar-oxford-10k 2019-01-18-14-46-59-radar-oxford-10k"
@@ -22,7 +22,7 @@ export EVALUATION_loss="Huber"
 export EVALUATION_covar_scale="1"
 export EVALUATION_regularization="1"
 export EVALUATION_weight_intensity="true"
-export EVALUATION_weight_option="3"
+export EVALUATION_weight_option="0 1 2 3 4 5"
 
 echo "-----Loaded PARAMETER LIST -------"
  printf 'Sequence: %s\n' "${EVALUATION_sequence[@]}"
