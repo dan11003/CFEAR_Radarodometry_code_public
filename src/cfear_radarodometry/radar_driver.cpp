@@ -102,7 +102,8 @@ void radarDriver::CallbackOxford(const sensor_msgs::ImageConstPtr &radar_image_p
   //StructuredKStrongest filt(cv_polar_image, par.z_min, par.k_strongest, par.min_distance, par.range_res);
   //filt.getPeaksFilteredPointCloud(cloud_filtered, false);
   if(par.filter_type_ == filtertype::CACFAR) {
-    AzimuthCACFAR filter;
+    cout<<"window: "<<par.window_size<<", par:false alarm:"<<par.false_alarm_rate<<", par:nb_guard:"<<par.nb_guard_cells<<endl;
+    AzimuthCACFAR filter(par.window_size, par.false_alarm_rate, par.nb_guard_cells, par.range_res, par.z_min , par.min_distance, 400.0);
     filter.getFilteredPointCloud(cv_polar_image,cloud_filtered);
   }
   else{

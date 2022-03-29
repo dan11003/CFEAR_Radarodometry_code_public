@@ -42,7 +42,7 @@ void AzimuthCACFAR::getFilteredPointCloud(const cv_bridge::CvImagePtr &radar_ima
     {
       const double range = range_resolution_ * double(range_bin);
       const double intensity = double(azimuth.at<uchar>(range_bin));
-      if(range > min_distance_ && range < max_distance_ && intensity > static_threshold_)
+      if(range > min_distance_ && range < max_distance_ && intensity > static_threshold_) //static th not officially part of CA-CFAR but speeds up and makes result more accurate. This
       {
         //Scaling factor should be updated with actual window size.
         const int trailing_window_start = std::max(0, range_bin - nb_guard_cells_ - window_size_);
@@ -53,7 +53,8 @@ void AzimuthCACFAR::getFilteredPointCloud(const cv_bridge::CvImagePtr &radar_ima
         const int forwarding_window_end = std::min(azimuth.cols, range_bin + nb_guard_cells_ + window_size_);
         const double forwarding_mean = getMean(azimuth, forwarding_window_start, forwarding_window_end);
 
-        const double mean = std::max(trailing_mean, forwarding_mean);
+        const double mean = (trailing_mean + forwarding_mean)/2.0;    // CA-CFAR
+        //const double mean std::max(trailing_mean, forwarding_mean); // GO-CFAR
         const double threshold = scaling_factor_ * mean;
         const double squared_intensity = std::pow(intensity, 2.);
         if(squared_intensity > threshold)

@@ -108,7 +108,7 @@ public:
         ros::Duration d = ros::Duration(tnow-tinit);
         static ros::Duration tot(0);
         tot +=d;
-        usleep(100*1000);
+        //usleep(100*1000);
 
 
         cout<<"Frame: "<<frame<<", dur: "<<d<<", avg: "<<++frame/tot.toSec()<<endl;
@@ -163,6 +163,9 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("filter-type", po::value<std::string>()->default_value("kstrong"), "filter type")
         ("method_name", po::value<std::string>()->default_value("method"), "method name")
         ("weight_option", po::value<int>()->default_value(0), "how to weight residuals")
+        ("false-alarm-rate", po::value<float>()->default_value(0.01), "CA-CFAR false alarm rate")
+        ("nb-guard-cells", po::value<int>()->default_value(10), "CA-CFAR nr guard cells")
+        ("nb-window-cells", po::value<int>()->default_value(10), "CA-CFAR nr guard cells")
         ("bag_path", po::value<std::string>()->default_value("/home/daniel/rosbag/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/radar/2019-01-10-12-32-52-radar-oxford-10k.bag"), "bag file to open");
 
     po::variables_map vm;
@@ -215,6 +218,14 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
       eval_par.save_pcd = true;
     if (vm.count("weight_option"))
       par.weight_opt = static_cast<weightoption>(vm["weight_option"].as<int>());
+    if (vm.count("k_strongest"))
+      rad_par.nb_guard_cells = vm["k_strongest"].as<int>();
+    if (vm.count("regularization"))
+      rad_par.false_alarm_rate = vm["regularization"].as<double>();
+    if (vm.count("covar_scale"))
+      rad_par.window_size = vm["covar_scale"].as<double>();
+
+
 
     rad_par.filter_type_ = Str2filter(vm["filter-type"].as<std::string>());
 

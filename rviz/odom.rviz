@@ -81,7 +81,7 @@ Visualization Manager:
       Max Color: 0; 0; 0
       Max Intensity: 134
       Min Color: 255; 255; 255
-      Min Intensity: 60
+      Min Intensity: 21
       Name: Map - PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -111,7 +111,7 @@ Visualization Manager:
       Max Color: 255; 255; 255
       Max Intensity: 134
       Min Color: 0; 0; 0
-      Min Intensity: 60
+      Min Intensity: 21
       Name: Latest scan Pt- PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -200,24 +200,14 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-    - Alpha: 1
-      Class: ndt_rviz/NDT
-      Color: 204; 51; 204
-      Enabled: true
-      History Length: 1
-      Name: NDT
-      Topic: /ndt_map
-      Unreliable: false
-      Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /current_normals
       Name: MarkerArray
       Namespaces:
-        debug: true
-        normal: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -246,7 +236,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 85.3442153930664
+      Distance: 110.8019790649414
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -261,10 +251,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5347962379455566
+      Pitch: 1.5247963666915894
       Target Frame: sensor_est
       Value: ThirdPersonFollower (rviz)
-      Yaw: 3.190399408340454
+      Yaw: 3.1603991985321045
     Saved: ~
 Window Geometry:
   Displays:

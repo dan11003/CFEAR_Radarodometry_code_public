@@ -16,8 +16,8 @@ protected:
   const bool square_law_ = false;
 
 public:
-  CFARFilter(const double &false_alarm_rate = 0.001, const double &range_resolution = 0.0432,
-             const double &static_threshold = 20.0, const double &min_distance = 2.5, const double &max_distance = 150.0);
+  CFARFilter(const double &false_alarm_rate = 0.001, const double &range_resolution = 0.0438,
+             const double &static_threshold = 60.0, const double &min_distance = 2.5, const double &max_distance = 150.0);
 
 protected:
   double getCAScalingFactor(const int &window_size) const;
@@ -33,7 +33,7 @@ private:
 
 public:
   AzimuthCACFAR(const int &window_size = 40, const double &false_alarm_rate = 0.01, const int &nb_guard_cells = 5,
-                const double &range_resolution = 0.0438, const double &static_threshold = 60.0, const double &min_distance = 2.5, const double &max_distance = 130.0);
+                const double &range_resolution = 0.0438, const double &static_threshold = 60.0, const double &min_distance = 2.5, const double &max_distance = 200.0);
 
   void getFilteredPointCloud(const cv_bridge::CvImagePtr &radar_image, pcl::PointCloud<pcl::PointXYZI>::Ptr &output_pointcloud) const;
 

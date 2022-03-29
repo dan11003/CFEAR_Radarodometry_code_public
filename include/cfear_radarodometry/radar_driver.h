@@ -38,6 +38,8 @@ public:
     float z_min = 60; // min power
     float range_res = 0.0438;
     int azimuths = 400, k_strongest = 12;
+    int nb_guard_cells = 20, window_size = 10;
+    float false_alarm_rate = 0.01;
     float min_distance = 2.5, max_distance = 200;
     std::string radar_frameid = "sensor_est", topic_filtered = "/Navtech/Filtered";
     std::string dataset = "oxford";
@@ -69,6 +71,9 @@ public:
       stringStream << "radar_frameid, "<<radar_frameid<<endl;
       stringStream << "dataset, "<<dataset<<endl;
       stringStream << "filter type, "<<Filter2str(filter_type_)<<endl;
+      stringStream << "nb guard cells, "<<nb_guard_cells<<endl;
+      stringStream << "window size, "<<window_size<<endl;
+      stringStream << "false alarm rate, "<<false_alarm_rate<<endl;
 
       return stringStream.str();
     }

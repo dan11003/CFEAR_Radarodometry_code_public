@@ -25,15 +25,25 @@ export cost_type="P2P"
 export submap_scan_size="4"
 export registered_min_keyframe_dist="1.5"
 export res="3"
-export kstrong="40"
-export zmin="60"
+
+#export zmin="40.0" # false alarm rate For CA-CFAR, this is , a small positive value e.g. 0.01
+
+
 export LOSS_TYPE="Huber"
 export LOSS_LIMIT="0.1"
-export COVAR_SCALE="1.228"
-export REGULARIZATION="0.1337"
 export range_res="0.0438"
 export weight_intensity="true"
-export filter_type="kstrong" #"CA-CFAR"
+
+export filter_type="CA-CFAR"
+export zmin="20.0"
+export kstrong="10"           # NB_GUARD_CELLS For CA-CFAR
+export COVAR_SCALE="500"      # Window size For CA-CFAR
+export REGULARIZATION="0.0001" #False alarm rate # [0.01 0.001 0.0001]]
+
+#export filter_type="kstrong"
+#export zmin="60.0" # false alarm rate For CA-CFAR, this is , a small positive value e.g. 0.01
+#export kstrong="12"
+
 
 
 

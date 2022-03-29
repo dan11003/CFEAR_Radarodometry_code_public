@@ -283,6 +283,8 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
         cost_function = P2PEfficientCost::Create(Ttar*tar_mean, src_mean);
       else
         cost_function = P2PCost::Create(tar_mean, src_mean);
+
+
     }
 
     if(time_continuous_)

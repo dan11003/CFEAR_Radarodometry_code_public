@@ -1,0 +1,5 @@
+#!/bin/bash
+current_date=`date '+%Y-%m-%d_%H%M'`
+export MULTI_EVAL_PREFIX=multi_${current_date}
+./utils/start_workers "params/kstrong_vs_cfar/oxford-cfear-3-ca-cfar" ${MULTI_EVAL_PREFIX}
+#./utils/start_workers "params/kstrong_vs_cfar/oxford-cfear-3-kstrong" ${MULTI_EVAL_PREFIX}
