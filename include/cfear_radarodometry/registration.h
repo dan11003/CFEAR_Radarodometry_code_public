@@ -105,6 +105,7 @@ public:
   std::map<int_pair, std::vector<Weights> >  weight_associations_;
 
   std::map<int_pair, std::vector<int_pair> > scan_associations_;
+  size_t itr_ = 0;
 
 
   ceres::Solver::Summary summary_;

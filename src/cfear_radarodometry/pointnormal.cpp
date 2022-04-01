@@ -245,16 +245,12 @@ std::vector<int> MapPointNormal::GetClosestIdx(const Eigen::Vector2d&  p, double
   std::vector<int> sub_index;
   std::vector<float> pointNKNSquaredDistances;
   kd_cells.setSortedResults(true);
-  kd_cells.radiusSearchT (pnt, d, pointIdxNKNSearchs, pointNKNSquaredDistances);
-  /*
+  //kd_cells.radiusSearchT (pnt, d, pointIdxNKNSearchs, pointNKNSquaredDistances);
   kd_cells.nearestKSearch(pnt, 1, pointIdxNKNSearchs, pointNKNSquaredDistances);
-  if(!pointIdxNKNSearchs.empty() && pointNKNSquaredDistances[0]<d*d )
+  if(!pointIdxNKNSearchs.empty() && pointNKNSquaredDistances[0] < d*d )
     return pointIdxNKNSearchs;
   else
-    return std::vector<int>();*/
-
-
-  return pointIdxNKNSearchs;
+    return std::vector<int>();
 }
 
 std::vector<cell*> MapPointNormal::GetClosest(Eigen::Vector2d&  p, double d){

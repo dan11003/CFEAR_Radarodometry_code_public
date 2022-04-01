@@ -90,11 +90,11 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
 
 
   bool success = true;
-  size_t itr;
+
 
   std::vector<double> prev_par = parameters.back();
   double prev_score = DBL_MAX;
-  for(itr = 1 ; itr<=8 && success; itr++){
+  for(itr_ = 1 ; itr_<=8 && success; itr_++){
     scan_associations_.clear();
     weight_associations_.clear();
     success = BuildOptimizationProblem(scans, reg_cov.back(), guess, soft_constraints);
@@ -113,7 +113,7 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
       break;
     }*/
 
-    if( itr > min_itr){
+    if( itr_ > min_itr){
       if(prev_score < current_score) // potential problem, recover to prev iteration
       {
         //CFEAR_Radarodometry::timing.Document("prev-better", 1);
@@ -134,7 +134,7 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
     //cout<<"build: "<<t2-t1<<", solve: "<<t3-t2<<endl;
   }
   //cout<<"itrs: "<<itr<<endl;
-  CFEAR_Radarodometry::timing.Document("itrs", (double)itr);
+  CFEAR_Radarodometry::timing.Document("itrs", (double)itr_);
   //cout<<"itrs: "<<itr<<endl;
 
   if(success){
@@ -199,6 +199,7 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
   double angle_outlier = std::cos(M_PI/6.0);
   int_pair scan_pair = std::make_pair(scan_idx_tar, scan_idx_src);
   std::unordered_map<size_t,double> stamps;
+  double curr_radius = (itr_ == 1) ? 2*radius_ : radius_; // course to fine strategy
 
   Eigen::Affine2d Tsrctotar = Ttar.inverse()*Tsrc;    // Associate in global reference frame based normals and center
   //cout<<"tar: "<<scan_idx_tar<<", src: "<<scan_idx_src<<", par: "<<parameters.size()<<endl;
@@ -217,7 +218,7 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
 
 
     const Eigen::Vector2d src_trans_mean  = Tsrctotar*src_local->GetMean2d(src_idx); //src_means_proj.block<2,1>(0,src_idx);
-    std::vector<int> tar_idx_nearby = target_local->GetClosestIdx(src_trans_mean, radius_);
+    std::vector<int> tar_idx_nearby = target_local->GetClosestIdx(src_trans_mean, curr_radius);
     int max_n_terms = 1, n_terms = 0;
     for(auto &&tar_idx : tar_idx_nearby){
       Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(src_idx);// src.block<2,1>(0,src_idx);
