@@ -1,0 +1,4 @@
+#!/bin/bash
+current_date=`date '+%Y-%m-%d_%H%M'`
+export MULTI_EVAL_PREFIX=multi_${current_date}
+./utils/start_workers "params/loss_function/loss_function_cfear-3" ${MULTI_EVAL_PREFIX}
