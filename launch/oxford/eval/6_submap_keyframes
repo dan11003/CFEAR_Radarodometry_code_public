@@ -1,0 +1,4 @@
+#!/bin/bash
+current_date=`date '+%Y-%m-%d_%H%M'`
+export MULTI_EVAL_PREFIX=multi_${current_date}
+./utils/start_workers "params/submap_keyframes/submap_keyframe_cfear-3" ${MULTI_EVAL_PREFIX}

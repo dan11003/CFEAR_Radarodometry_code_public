@@ -70,8 +70,7 @@ double Registration::Weights::GetWeight(const weightoption opt){
   case weightoption::Sim_N:            return Similarity(N1_,N2_);
   case weightoption::Sim_direciton :   return sim_dir_;
   case weightoption::Sim_scale:        return Similarity(plan1_, plan2_);
-  case weightoption::Planarity:        return std::min(plan1_, plan2_);
-  case weightoption::Combined_weights: return GetWeight(Sim_N) + GetWeight(Sim_direciton) + GetWeight(Sim_scale) + GetWeight(Planarity);
+  case weightoption::Combined_weights: return GetWeight(Sim_N) + GetWeight(Sim_direciton) + GetWeight(Sim_scale);
 
   }
 }

@@ -48,7 +48,7 @@ typedef boost::shared_ptr<CFEAR_Radarodometry::Registration> regPtr;
 
 typedef enum reg_mode{incremental_last_to_previous, many_to_many_refinement} regmode;
 
-typedef enum weight_options{Uniform = 0, Sim_N = 1, Sim_direciton = 2, Sim_scale = 3, Planarity = 4, Combined_weights = 5}weightoption;
+typedef enum weight_options{Uniform = 0, Sim_N = 1, Sim_direciton = 2, Sim_scale = 3, Combined_weights = 4}weightoption;
 
 const Matrix6d Identity66 = Matrix6d::Identity();
 
