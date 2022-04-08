@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export EVAL_OUTPUT_BASE_PATH="${BAG_LOCATION}/CFEAR_EVALd"
+export EVAL_OUTPUT_BASE_PATH="${BAG_LOCATION}/CFEAR_EVAL"
 export BAG_BASE_PATH="${BAG_LOCATION}/Mulran"
 export EVAL_DATASET="mulran"
 export NR_WORKERS="9"
