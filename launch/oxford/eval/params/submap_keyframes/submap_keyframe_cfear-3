@@ -21,7 +21,7 @@ export EVALUATION_loss_limit="0.1"
 export EVALUATION_loss="Huber"
 export EVALUATION_covar_scale="1"
 export EVALUATION_regularization="1"
-export EVALUATION_weight_intensity="true"
+export EVALUATION_weight_intensity="false"
 export EVALUATION_weight_option="0"
 export EVALUATION_filter_type="kstrong"
 
