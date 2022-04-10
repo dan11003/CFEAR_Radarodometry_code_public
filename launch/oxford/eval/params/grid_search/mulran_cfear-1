@@ -3,9 +3,9 @@
 export EVAL_OUTPUT_BASE_PATH="${BAG_LOCATION}/CFEAR_EVAL"
 export BAG_BASE_PATH="${BAG_LOCATION}/Mulran"
 export EVAL_DATASET="mulran"
-export NR_WORKERS="9"
+export NR_WORKERS="10"
 export KITTI_DIR=`rospack find kitti-odom-eval`
-export EVALUATION_description="baseline-cfear-1"
+export EVALUATION_description="grid-search-cfear-1"
 export EVALUATION_sequence="KAIST01 KAIST02 KAIST03 DCC01 DCC02 DCC03 Riverside01 Riverside02 Riverside03"
 
 export EVALUATION_radar_ccw="true"
@@ -15,10 +15,10 @@ export EVALUATION_cost_type="P2L"
 export EVALUATION_submap_scan_size="1"
 export EVALUATION_registered_min_keyframe_dist="1.5"
 export EVALUATION_res="2.5 3 3.5 4" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
-export EVALUATION_kstrong="12 20 30 40" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
+export EVALUATION_kstrong="10 12 15" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
 export EVALUATION_zmin="60 70 80" # between 1 and 100
 export EVALUATION_RANGE_RES="0.0595238" # between 1 and 100
-export EVALUATION_loss_limit="0.1"
+export EVALUATION_loss_limit="0.1 0.2 0.3 0.4"
 export EVALUATION_loss="Huber"
 export EVALUATION_covar_scale="1"
 export EVALUATION_regularization="1"
