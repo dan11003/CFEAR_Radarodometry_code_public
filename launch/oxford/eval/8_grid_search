@@ -1,10 +1,12 @@
 #!/bin/bash
 current_date=`date '+%Y-%m-%d_%H%M'`
 export MULTI_EVAL_PREFIX=grid_search_${current_date}
-./utils/start_workers "params/grid_search/oxford_cfear-1" ${MULTI_EVAL_PREFIX}
-./utils/start_workers "params/grid_search/oxford_cfear-2" ${MULTI_EVAL_PREFIX}
-./utils/start_workers "params/grid_search/oxford_cfear-3" ${MULTI_EVAL_PREFIX}
+#./utils/start_workers "params/grid_search/oxford_cfear-1" ${MULTI_EVAL_PREFIX}
+#./utils/start_workers "params/grid_search/oxford_cfear-2" ${MULTI_EVAL_PREFIX}
+#./utils/start_workers "params/grid_search/oxford_cfear-3" ${MULTI_EVAL_PREFIX}
+#./utils/start_workers "params/grid_search/oxford_cfear-3-p2l ${MULTI_EVAL_PREFIX}
 
 ./utils/start_workers "params/grid_search/mulran_cfear-1" ${MULTI_EVAL_PREFIX}
 ./utils/start_workers "params/grid_search/mulran_cfear-2" ${MULTI_EVAL_PREFIX}
 ./utils/start_workers "params/grid_search/mulran_cfear-3" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/grid_search/mulran_cfear-3-p2l" ${MULTI_EVAL_PREFIX}
