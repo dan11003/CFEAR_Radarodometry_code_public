@@ -13,16 +13,16 @@ export EVALUATION_disable_compensate="false"
 export EVALUATION_cost_type="P2L"
 export EVALUATION_submap_scan_size="4 5 6"
 export EVALUATION_registered_min_keyframe_dist="1.5"
-export EVALUATION_res="2.5 3 3.5 4" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
+export EVALUATION_res="2.5 2.75 3" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
 export EVALUATION_kstrong="30 40 50" #DONT USE FLOATING POINT REPRESENTATION FOR WHAT CAN BE REPRESENTED AS INTEGERS
-export EVALUATION_zmin="60 70 80" # between 1 and 100
+export EVALUATION_zmin="50 60 70" # between 1 and 100
 export EVALUATION_RANGE_RES="0.0438" 
-export EVALUATION_loss_limit="0.1 0.2 0.3 0.4"
+export EVALUATION_loss_limit="0.1 0.2 0.3"
 export EVALUATION_loss="Huber"
 export EVALUATION_covar_scale="1"
 export EVALUATION_regularization="1"
 export EVALUATION_weight_intensity="true"
-export EVALUATION_weight_option="0 4"
+export EVALUATION_weight_option="4"
 export EVALUATION_filter_type="kstrong"
 
 echo "-----Loaded PARAMETER LIST -------"
