@@ -224,7 +224,7 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
       Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(src_idx);// src.block<2,1>(0,src_idx);
       Eigen::Vector2d tar_normal = target_local->GetNormal2d(tar_idx);  //.block<2,1>(0,tar_idx);
       const double direction_similarity = std::max(src_normal_trans.dot(tar_normal), 0.0);
-      //if(direction_similarity > angle_outlier){
+      //if(direction_similarity > angle_outlier){ // Tested without, gives slightly worse performance
 
       const double n_src = src_local->GetCell(src_idx).Nsamples_;
       const double n_tar = target_local->GetCell(tar_idx).Nsamples_;
@@ -254,11 +254,11 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
 
 
 
-    ceres::CostFunction* cost_function;
+    ceres::CostFunction* cost_function = nullptr;
     if(cost_ == cost_metric::P2L){
 
-      const Eigen::Vector2d src_normal = src_local->GetNormal2d(ass_src_idx);
-      Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(ass_src_idx);// src.block<2,1>(0,src_idx);
+      //const Eigen::Vector2d src_normal = src_local->GetNormal2d(ass_src_idx);
+      //Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(ass_src_idx);// src.block<2,1>(0,src_idx);
       const Eigen::Vector2d tar_normal = target_local->GetNormal2d(ass_tar_idx);
       //double similarity_weight = fabs(src_normal_trans.dot(tar_normal));
       if(efficient_implementation)
@@ -268,12 +268,15 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
       }
     }
     else if( cost_ == cost_metric::P2D){
+
       Eigen::Matrix2d reg_mat;
       reg_mat<<regularization_, 0, 0, regularization_; //pow(10,-6), 0, 0, pow(10,-6);
       const Eigen::Matrix2d tar_cov = (reg_mat + Ttar.linear()*target_local->GetCov2d(ass_tar_idx)*Ttar.linear().transpose())*cov_scale_ ;
+      //cout<<"regularization_: "<<regularization_<<", cov_scale_ :"<<cov_scale_ <<endl;
       //<<"tar_cov: "<<tar_cov<<endl;
       const Eigen::Matrix2d sqrt_information = tar_cov.inverse().llt().matrixL();
-      cost_function = P2DCost::Create(tar_mean, sqrt_information , src_mean);
+      //cost_function = ceres::NormalPrior(sqrt_information,Ttar.translation());
+      cost_function = P2DEfficientCost::Create(Ttar*tar_mean, sqrt_information , src_mean);
     }
     else{
       //double scale_similarity = 1-fabs(src_scales(0,ass_src_idx)-tar_scales(0,ass_tar_idx))/(src_scales(0,ass_src_idx)+tar_scales(0,ass_tar_idx));
@@ -378,6 +381,14 @@ bool n_scan_normal_reg::GetCovariance(Matrix6d &Cov){
   double* v = parameters[parameters.size()-1].data();
   covariance_blocks.push_back(std::make_pair(v, v));
   bool cov_deficient = !covariance.Compute(covariance_blocks, problem_.get());
+  //double score;
+  ////std::vector<double> residuals;
+  //ceres::CRSMatrix jac;
+  //ceres::Problem::EvaluateOptions opti;
+
+  //bool success = problem_->Evaluate(opti, &score, &residuals, nullptr, &jac);
+  //cout<<jac.rows.size()<<" x "<<jac.cols.size()<<endl;
+  //cout<<"residuals: "<<" x "<<residuals.size()<<endl;
   if(cov_deficient)
     return false;
   else{

@@ -19,7 +19,7 @@
 #include "cfear_radarodometry/registration.h"
 #include "ceres/loss_function.h"
 #include <algorithm>
-
+#include "ceres/normal_prior.h"
 
 namespace CFEAR_Radarodometry{
 
@@ -204,25 +204,25 @@ public:
 };
 
 
-class P2DCost : public RegistrationCost{
+class P2DEfficientCost : public RegistrationCost{
 public:
 
-  P2DCost (const Eigen::Vector2d& target_mean, const Eigen::Matrix2d& tar_sqrt_information, const Eigen::Vector2d& src_mean) :
+  P2DEfficientCost (const Eigen::Vector2d& target_mean, const Eigen::Matrix2d& tar_sqrt_information, const Eigen::Vector2d& src_mean) :
     tar_mean_(target_mean),
     tar_sqrt_information_(tar_sqrt_information),
     src_mean_(src_mean) {}
 
   template <typename T>
   bool operator()(const T*  Ta,
-                  const T*  Tb,
                   T* residuals_ptr) const {
-    const Eigen::Matrix<T,2,1> trans_mat_tar = GetTransMatrix2D(Ta);
-    const Eigen::Matrix<T,2,2> rot_mat_tar = GetRotMatrix2D(Ta);
+    //const Eigen::Matrix<T,2,1> trans_mat_tar = GetTransMatrix2D(Ta);
+    //const Eigen::Matrix<T,2,2> rot_mat_tar = GetRotMatrix2D(Ta);
 
-    const Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Tb);
-    const Eigen::Matrix<T,2,2> rot_mat_src = GetRotMatrix2D(Tb);
+    const Eigen::Matrix<T,2,1> trans_mat_src = GetTransMatrix2D(Ta);
+    const Eigen::Matrix<T,2,2> rot_mat_src = GetRotMatrix2D(Ta);
 
-    const Eigen::Matrix<T,2,1> transformed_mean_tar = (rot_mat_tar * (tar_mean_).cast<T>()) + trans_mat_tar;
+    //const Eigen::Matrix<T,2,1> transformed_mean_tar = (rot_mat_tar * (tar_mean_).cast<T>()) + trans_mat_tar;
+    const Eigen::Matrix<T,2,1> transformed_mean_tar = tar_mean_.cast<T>();
     const Eigen::Matrix<T,2,1> transformed_mean_src = (rot_mat_src * (src_mean_).cast<T>()) + trans_mat_src;
 
 
@@ -235,7 +235,7 @@ public:
 
   static ceres::CostFunction* Create(
       const Eigen::Vector2d& target_mean, const Eigen::Matrix2d& tar_sqrt_information, const Eigen::Vector2d& src_mean) {
-    return new ceres::AutoDiffCostFunction<P2DCost ,2, 3, 3>(new P2DCost (target_mean, tar_sqrt_information, src_mean));
+    return new ceres::AutoDiffCostFunction<P2DEfficientCost ,2, 3>(new P2DEfficientCost (target_mean, tar_sqrt_information, src_mean));
   }
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
