@@ -2,11 +2,22 @@
 current_date=`date '+%Y-%m-%d_%H%M'`
 export MULTI_EVAL_PREFIX=multi_${current_date}
 ./utils/start_workers "params/baseline/oxford_cfear-1" ${MULTI_EVAL_PREFIX}
-#./utils/start_workers "params/baseline/oxford_cfear-2" ${MULTI_EVAL_PREFIX}
-#./utils/start_workers "params/baseline/oxford_cfear-3" ${MULTI_EVAL_PREFIX}
-#/utils/start_workers "params/baseline/oxford_cfear-3-p2l" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline/oxford_cfear-2" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline/oxford_cfear-3" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline/oxford_cfear-3-s10" ${MULTI_EVAL_PREFIX}
 
-#./utils/start_workers "params/baseline/mulran_cfear-1" ${MULTI_EVAL_PREFIX}
-#./utils/start_workers "params/baseline/mulran_cfear-2" ${MULTI_EVAL_PREFIX}
-#./utils/start_workers "params/baseline/mulran_cfear-3" ${MULTI_EVAL_PREFIX}
-#./utils/start_workers "params/baseline/mulran_cfear-3-p2l" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline/mulran_cfear-1" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline/mulran_cfear-2" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline/mulran_cfear-3" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline/mulran_cfear-3-s10" ${MULTI_EVAL_PREFIX}
+
+./utils/start_workers "params/baseline_p2d/oxford_cfear-1" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline_p2d/oxford_cfear-2" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline_p2d/oxford_cfear-3" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline_p2d/oxford_cfear-3-s10" ${MULTI_EVAL_PREFIX}
+
+./utils/start_workers "params/baseline_p2d/mulran_cfear-1" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline_p2d/mulran_cfear-2" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline_p2d/mulran_cfear-3" ${MULTI_EVAL_PREFIX}
+./utils/start_workers "params/baseline_p2d/mulran_cfear-3-s10" ${MULTI_EVAL_PREFIX}
+
