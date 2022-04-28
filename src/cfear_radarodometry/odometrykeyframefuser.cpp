@@ -67,24 +67,6 @@ bool OdometryKeyframeFuser::KeyFrameBasedFuse(const Eigen::Affine3d& diff, bool 
     fuse_frame = true;
   return fuse_frame;
 }
-void OdometryKeyframeFuser::FormatScans(const PoseScanVector& reference,
-                                        const CFEAR_Radarodometry::MapNormalPtr& Pcurrent,
-                                        const Eigen::Affine3d& Tcurrent,
-                                        std::vector<Matrix6d>& cov_vek,
-                                        std::vector<MapNormalPtr>& scans_vek,
-                                        std::vector<Eigen::Affine3d>& T_vek
-                                        ){
-
-  for (int i=0;i<reference.size();i++) {
-    cov_vek.push_back(Identity66);
-    scans_vek.push_back(reference[i].second);
-    T_vek.push_back(reference[i].first);
-  }
-  cov_vek.push_back(Identity66);
-  scans_vek.push_back(Pcurrent);
-  T_vek.push_back(Tcurrent);
-}
-
 
 
 bool OdometryKeyframeFuser::AccelerationVelocitySanityCheck(const Eigen::Affine3d& Tmot_prev, const Eigen::Affine3d& Tmot_curr) {
@@ -153,13 +135,6 @@ pcl::PointCloud<pcl::PointXYZI> OdometryKeyframeFuser::FormatScanMsg(pcl::PointC
   cloud_out.header.stamp = cloud_in.header.stamp;
   return cloud_out;
 }
-void OdometryKeyframeFuser::AddToReference(PoseScanVector& reference, MapNormalPtr cloud,  const Eigen::Affine3d& T){
-  reference.push_back( std::make_pair(T, cloud) );
-  if(reference.size() > par.submap_scan_size){
-    reference.erase(reference.begin());
-  }
-}
-
 
 void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud) {
 
@@ -188,7 +163,7 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
     Tguess = T_prev;
 
   if(keyframes_.empty()){
-    AddToReference(keyframes_, Pcurrent, Eigen::Affine3d::Identity());
+    AddToReference(keyframes_, Pcurrent, Eigen::Affine3d::Identity(), 2);
     return;
   }
   else
@@ -270,7 +245,7 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
     pose_keyframe_publisher.publish(msg_keyframe);
 
     frame_nr_++;
-    AddToReference(keyframes_, Pcurrent, Tprev_fused);
+    AddToReference(keyframes_, Pcurrent, Tprev_fused, 2);
   }
   ros::Time t4 = ros::Time::now();
   CFEAR_Radarodometry::timing.Document("compensate", ToMs(t1-t0));
@@ -321,5 +296,29 @@ void OdometryKeyframeFuser::PrintSurface(const std::string& path, const Eigen::M
   myfile.close();
 }
 
+void AddToReference(PoseScanVector& reference, MapNormalPtr cloud,  const Eigen::Affine3d& T, size_t submap_scan_size){
+  reference.push_back( std::make_pair(T, cloud) );
+  if(reference.size() > submap_scan_size){
+    reference.erase(reference.begin());
+  }
+}
+
+void FormatScans(const PoseScanVector& reference,
+                                        const CFEAR_Radarodometry::MapNormalPtr& Pcurrent,
+                                        const Eigen::Affine3d& Tcurrent,
+                                        std::vector<Matrix6d>& cov_vek,
+                                        std::vector<MapNormalPtr>& scans_vek,
+                                        std::vector<Eigen::Affine3d>& T_vek
+                                        ){
+
+  for (int i=0;i<reference.size();i++) {
+    cov_vek.push_back(Identity66);
+    scans_vek.push_back(reference[i].second);
+    T_vek.push_back(reference[i].first);
+  }
+  cov_vek.push_back(Identity66);
+  scans_vek.push_back(Pcurrent);
+  T_vek.push_back(Tcurrent);
+}
 
 }
