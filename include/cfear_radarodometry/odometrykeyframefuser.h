@@ -206,13 +206,6 @@ private:
   bool KeyFrameBasedFuse(const Eigen::Affine3d& diff, bool use_keyframe, double min_keyframe_dist, double min_keyframe_rot_deg);
 
 
-  void FormatScans(const PoseScanVector& reference,
-                   const MapNormalPtr& Pcurrent,
-                   const Eigen::Affine3d& Tcurrent,
-                   std::vector<Matrix6d>& cov_vek,
-                   std::vector<MapNormalPtr>& scans_vek,
-                   std::vector<Eigen::Affine3d>& T_vek
-                   );
 
   Eigen::Affine3d Interpolate(const Eigen::Affine3d &T2, double factor, const Eigen::Affine3d &T1 = Eigen::Affine3d::Identity());
 
@@ -222,7 +215,6 @@ private:
 
   pcl::PointCloud<pcl::PointXYZI> FormatScanMsg(pcl::PointCloud<pcl::PointXYZI>& cloud_in, Eigen::Affine3d& T);
 
-  void AddToReference(PoseScanVector& reference, MapNormalPtr cloud,  const Eigen::Affine3d& T);
 
   void processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud);
 
@@ -232,5 +224,15 @@ private:
 
 
 };
+
+void AddToReference(PoseScanVector& reference, MapNormalPtr cloud,  const Eigen::Affine3d& T,  size_t submap_scan_size);
+
+void FormatScans(const PoseScanVector& reference,
+                   const MapNormalPtr& Pcurrent,
+                   const Eigen::Affine3d& Tcurrent,
+                   std::vector<Matrix6d>& cov_vek,
+                   std::vector<MapNormalPtr>& scans_vek,
+                   std::vector<Eigen::Affine3d>& T_vek
+                   );
 
 }
