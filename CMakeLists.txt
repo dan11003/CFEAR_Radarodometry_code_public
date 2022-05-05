@@ -5,12 +5,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 set(CMAKE_BUILD_TYPE release)
 
 
-if("$ENV{ROS_DISTRO}" STREQUAL "indigo")
-add_definitions(-std=c++17)
-endif()
 ## If pcl not found
-set(PCL_DIR "/usr/lib/x86_64-linux-gnu/cmake/pcl/")
+#set(PCL_DIR "/usr/lib/x86_64-linux-gnu/cmake/pcl/")
 find_package(PCL  REQUIRED)
+set(_include_dirs "include;/usr/include;/usr/include/opencv4")
 
 find_package(catkin REQUIRED COMPONENTS
     geometry_msgs
@@ -28,6 +26,7 @@ find_package(catkin REQUIRED COMPONENTS
     image_transport
     #ndt_map
     )
+ find_package(OpenCV 4)
 find_package(OpenMP REQUIRED)
 if(OPENMP_FOUND)
  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} -O3 ")
@@ -37,7 +36,7 @@ endif()
 #set(DCMAKE_CXX_FLAGS "-Werror -Wall -Wextra")
 
 find_package(Ceres REQUIRED)
-find_package(PCL 1.0 REQUIRED)
+find_package(PCL 1.7 REQUIRED)
 find_package(PCL REQUIRED)
 add_definitions(${PCL_DEFINITIONS})
 
