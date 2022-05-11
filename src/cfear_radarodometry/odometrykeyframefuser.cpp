@@ -163,7 +163,7 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
     Tguess = T_prev;
 
   if(keyframes_.empty()){
-    AddToReference(keyframes_, Pcurrent, Eigen::Affine3d::Identity(), 2);
+    AddToReference(keyframes_, Pcurrent, Eigen::Affine3d::Identity(), par.submap_scan_size);
     return;
   }
   else
@@ -245,7 +245,7 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
     pose_keyframe_publisher.publish(msg_keyframe);
 
     frame_nr_++;
-    AddToReference(keyframes_, Pcurrent, Tprev_fused, 2);
+    AddToReference(keyframes_, Pcurrent, Tprev_fused, par.submap_scan_size);
   }
   ros::Time t4 = ros::Time::now();
   CFEAR_Radarodometry::timing.Document("compensate", ToMs(t1-t0));

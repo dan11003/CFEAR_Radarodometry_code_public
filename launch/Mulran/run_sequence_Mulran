@@ -3,7 +3,7 @@
 killall rviz
 #SEQUENCE="2019-01-16-11-53-11-radar-oxford-10k"
 #SEQUENCE="DCC01"
-SEQUENCE="KAIST01"
+SEQUENCE="Riverside01"
 current_date=`date '+%Y-%m-%d_%H:%M'`
 EVAL_BASE_DIR="/home/daniel/rosbag/Mulran/trash_eval/${current_date}"
 JOB_NR=${11}
@@ -17,8 +17,9 @@ BAG_BASE_PATH="/home/daniel/rosbag/Mulran"
 BAG_FILE_PATH="${BAG_BASE_PATH}/${SEQUENCE}/radar/${SEQUENCE}.bag"
 echo "${BAG_FILE_PATH}"
 
-#PARAMETERS CFEAR-3
 export range_resolution="0.0595238"
+
+#PARAMETERS CFEAR-3
 export radar_ccw="true"
 export soft_constraint="false"
 export disable_compensate="false"
@@ -28,7 +29,8 @@ export registered_min_keyframe_dist="1.5"
 export res="3"
 export kstrong="40"
 export zmin="60"
-
+export weight_option="4"
+export weight_intensity="true"
 # CFEAR-2
 #export radar_ccw="true"
 #export soft_constraint="false"
@@ -46,7 +48,7 @@ export zmin="60"
 #export soft_constraint="false"
 #export disable_compensate="false"
 #export cost_type="P2L"
-#export submap_scan_size="1"
+#export submap_scan_size="3"
 #export registered_min_keyframe_dist="1.5"
 #export res="3"
 #export kstrong="12"
@@ -55,7 +57,7 @@ export zmin="60"
 
 
 
-pars="--range-res ${range_resolution} --sequence ${SEQUENCE} --radar_ccw ${radar_ccw} --soft_constraint ${soft_constraint} --disable_compensate ${disable_compensate} --cost_type ${cost_type} --submap_scan_size ${submap_scan_size} --registered_min_keyframe_dist ${registered_min_keyframe_dist} --res ${res} --k_strongest ${kstrong} --bag_path ${BAG_FILE_PATH} --est_directory ${est_dir} --gt_directory ${gt_dir} --job_nr 1 --z-min ${zmin} --dataset Mulran "
+pars="--range-res ${range_resolution} --sequence ${SEQUENCE} --radar_ccw ${radar_ccw} --soft_constraint ${soft_constraint} --disable_compensate ${disable_compensate} --cost_type ${cost_type} --submap_scan_size ${submap_scan_size} --registered_min_keyframe_dist ${registered_min_keyframe_dist} --res ${res} --k_strongest ${kstrong} --bag_path ${BAG_FILE_PATH} --est_directory ${est_dir} --gt_directory ${gt_dir} --job_nr 1 --z-min ${zmin} --weight_option ${weight_option} --weight_intensity ${weight_intensity} --dataset Mulran "
 #echo "|||||Estimating odometry with parameters: ${pars}||||"
 roslaunch cfear_radarodometry vis.launch&
 rosrun cfear_radarodometry offline_odometry ${pars} #>/dev/null
