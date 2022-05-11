@@ -73,15 +73,17 @@ public:
     std::string odom_est_topic = "", odom_gt_topic = "";
     int job_nr = -1;
     bool save_pcd = false;
+    bool synced_callback = true;
 
     void GetParametersFromRos( ros::NodeHandle& param_nh){
       param_nh.param<std::string>("est_topic", odom_est_topic, "/lidar_odom");
       param_nh.param<std::string>("gt_topic",  odom_gt_topic, "/gt");
       param_nh.param<std::string>("est_output_dir", est_output_dir, "");
-      param_nh.param<std::string>("gt_otuput_dir",  gt_output_dir, "");
+      param_nh.param<std::string>("gt_output_dir",  gt_output_dir, "");
       param_nh.param<std::string>("bag_name",  sequence, "");
       param_nh.param<std::string>("method",  method, "");
       param_nh.param<bool>("save_pcd",  save_pcd, false);
+      param_nh.param<bool>("synced_callback",  synced_callback, true);
     }
 
     std::string ToString(){

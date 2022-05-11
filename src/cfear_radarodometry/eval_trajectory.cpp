@@ -7,10 +7,16 @@ EvalTrajectory::EvalTrajectory(const EvalTrajectory::Parameters& pars, bool disa
 
   if(!disable_callback){
     assert(!par.odom_gt_topic.empty() && !par.odom_est_topic.empty());
-    pose_sub_gt  = new message_filters::Subscriber<nav_msgs::Odometry>(nh_, par.odom_gt_topic, 100);
-    pose_sub_est  = new message_filters::Subscriber<nav_msgs::Odometry>(nh_, par.odom_est_topic, 100);
-    sync = new Synchronizer<double_odom>(double_odom(100), *pose_sub_gt, *pose_sub_est);
-    sync->registerCallback(boost::bind(&EvalTrajectory::CallbackSynchronized,this, _1, _2));
+    if(par.synced_callback){
+      pose_sub_gt  = new message_filters::Subscriber<nav_msgs::Odometry>(nh_, par.odom_gt_topic, 100);
+      pose_sub_est  = new message_filters::Subscriber<nav_msgs::Odometry>(nh_, par.odom_est_topic, 100);
+      sync = new Synchronizer<double_odom>(double_odom(100), *pose_sub_gt, *pose_sub_est);
+      sync->registerCallback(boost::bind(&EvalTrajectory::CallbackSynchronized,this, _1, _2));
+    }
+    else{
+      sub_est = nh_.subscribe(par.odom_est_topic, 1000, &EvalTrajectory::CallbackEst, this);
+      sub_gt = nh_.subscribe(par.odom_gt_topic, 1000, &EvalTrajectory::CallbackGT, this);
+    }
   }
   pub_est = nh_.advertise<nav_msgs::Path>("path_est", 10);
   pub_gt = nh_.advertise<nav_msgs::Path>("path_gt", 10);
@@ -210,19 +216,20 @@ void EvalTrajectory::SavePCD(const std::string& folder){
 }
 
 void EvalTrajectory::Save(){
+  cout << "Saving, outpout: " << par.est_output_dir << std::endl;
 
   if(est_vek.empty() && gt_vek.empty()){
     cout<<"Nothing to evaluate"<<endl;
     cerr<<"array size error. est_vek.size()="<<est_vek.size()<<", gt_vek.size()="<<gt_vek.size()<<endl;
     exit(0);
-   }
+  }
   else if(gt_vek.empty()){
     cout<<"No ground truth? No problem! without gps the need of radar based localization is even larger"<<endl;
     boost::filesystem::create_directories(par.est_output_dir);
     std::string est_path = par.est_output_dir+DatasetToSequence(par.sequence);     cout<<"Saving estimate poses only, no ground truth, total: "<<est_vek.size()<<" poses"<<endl;
     cout<<"To path: "<<est_path<<endl;
-  if(par.save_pcd)
-    SavePCD(par.est_output_dir);
+    if(par.save_pcd)
+      SavePCD(par.est_output_dir);
     Write(est_path,  est_vek);
     cout<<"Trajectoy saved"<<endl;
     return;
@@ -233,10 +240,14 @@ void EvalTrajectory::Save(){
     //PrintStatus();
     One2OneCorrespondance();
   }
+  else if(par.method == "floam"){ // only needed for lidar and mulran to interpolate timetamps
+    One2OneCorrespondance();
+  }
+
   //AlignTrajectories();
   /*ros::Rate r(1);
-  while(ros::ok()){
-    PublishTrajectory(est_vek, pub_est);
+  //while(ros::ok()){
+    //PublishTrajectory(est_vek, pub_est);
     PublishTrajectory(gt_vek, pub_gt);
     downsampled->header.frame_id = std::string("world");
     ros::Time t = ros::Time::now();
@@ -244,7 +255,9 @@ void EvalTrajectory::Save(){
     //pub_cloud.publish(*downsampled);
     r.sleep();
   }*/
+  cout << "create: " << par.gt_output_dir << std::endl;
   boost::filesystem::create_directories(par.gt_output_dir);
+  cout << "create: " << par.est_output_dir << std::endl;
   boost::filesystem::create_directories(par.est_output_dir);
   std::string gt_path  = par.gt_output_dir +DatasetToSequence(par.sequence);
   std::string est_path = par.est_output_dir+DatasetToSequence(par.sequence);
@@ -351,7 +364,7 @@ Eigen::Matrix4d EvalTrajectory::best_fit_transform(const Eigen::MatrixXd &A, con
 void EvalTrajectory::One2OneCorrespondance(){
   cout<<"force one to one. est: "<<est_vek.size()<<", gt: "<<gt_vek.size()<<endl;
   poseStampedVector revised_est, revised_gt;
-   poseStampedVector::iterator init_guess = gt_vek.begin();
+  poseStampedVector::iterator init_guess = gt_vek.begin();
   for(size_t i=0 ; i<est_vek.size() ; i++){
     poseStamped interp_corr;
     if(Interpolate(est_vek[i].second, interp_corr, init_guess)){
@@ -391,17 +404,17 @@ bool EvalTrajectory::SearchByTime(const ros::Time& t, poseStampedVector::iterato
 }
 bool EvalTrajectory::Interpolate(const ros::Time& t, poseStamped& Tinterpolated, poseStampedVector::iterator& itr){
   //cout<<"search: "<<t<<endl;
- bool found = SearchByTime(t,itr);
- if(found){
-   poseStamped Tbefore = *itr;
-   poseStamped Tafter = *std::next(itr);
+  bool found = SearchByTime(t,itr);
+  if(found){
+    poseStamped Tbefore = *itr;
+    poseStamped Tafter = *std::next(itr);
 
-   Tinterpolated.first = pose_interp(t.toSec(), Tbefore.second.toSec(), Tafter.second.toSec(),
-                                     Tbefore.first, Tafter.first);
-   Tinterpolated.second = t;
-  return true;
- }
- else return false;
+    Tinterpolated.first = pose_interp(t.toSec(), Tbefore.second.toSec(), Tafter.second.toSec(),
+                                      Tbefore.first, Tafter.first);
+    Tinterpolated.second = t;
+    return true;
+  }
+  else return false;
 
 }
 Eigen::Affine3d EvalTrajectory::pose_interp(double t, double t1, double t2, Eigen::Affine3d const& aff1, Eigen::Affine3d const& aff2) {
