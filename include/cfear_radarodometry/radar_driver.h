@@ -13,6 +13,8 @@
 #include "cfear_radarodometry/radar_filters.h"
 #include "cfear_radarodometry/statistics.h"
 #include "cfear_radarodometry/cfar.h"
+#include "cfear_radarodometry/pointnormal.h"
+
 
 namespace CFEAR_Radarodometry  {
 using std::cout;

@@ -151,10 +151,6 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   ros::Time t1 = ros::Time::now();
   CFEAR_Radarodometry::MapNormalPtr Pcurrent = CFEAR_Radarodometry::MapNormalPtr(new MapPointNormal(cloud, par.res, Eigen::Vector2d(0,0), par.weight_intensity_, par.use_raw_pointcloud));
 
-
-
-
-
   ros::Time t2 = ros::Time::now();
   Eigen::Affine3d Tguess;
   if(par.use_guess)
@@ -169,40 +165,28 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   else
     FormatScans(keyframes_, Pcurrent, Tguess, cov_vek, scans_vek, T_vek);
 
+  //Only for generating plots
+
 
   bool success = true;
-  Eigen::Affine3d Tprior = T_prev;
-  //cout<<"prior:"<<Tprior.translation().transpose()<<endl;
-  //cout<<"guess:"<<Tguess.translation().transpose()<<endl;
-
   if(!par.disable_registration)
     bool success = radar_reg->Register(scans_vek, T_vek, cov_vek, par.soft_constraint);
-    //bool success = radar_reg->RegisterTimeContinuous(scans_vek, T_vek, cov_vek, Tmot, par.soft_constraint, par.radar_ccw);
-
-
-
-    //bool success = radar_reg->RegisterTimeContinuous(scans_vek, T_vek, cov_vek, Tmot, par.soft_constraint, par.radar_ccw);
-    //bool success = radar_reg->Register(scans_vek, T_vek, cov_vek, par.soft_constraint);
-    //
 
   ros::Time t3 = ros::Time::now();
-  //cout<<radar_reg->getScore()<<endl;
 
   if(success==false){
-    //    cout<<"registration failure"<<radar_reg->summary_.FullReport()<<endl;
+    cout<<"registration failure"<<radar_reg->summary_.FullReport()<<endl;
     exit(0);
   }
 
-  //PlotAssociations(scans_vek, T_vek, radar_reg->scan_associations_,  t);
   Tcurrent = T_vek.back();
-  //Pcurrent->Compensate(Tmot, par.radar_ccw);
   Eigen::Affine3d Tmot_current = T_prev.inverse()*Tcurrent;
   if(!AccelerationVelocitySanityCheck(Tmot, Tmot_current))
     Tcurrent = Tguess; //Insane acceleration and speed, lets use the guess.
   Tmot = T_prev.inverse()*Tcurrent;
 
 
-  MapPointNormal::PublishMap("/current_normals", Pcurrent, Tcurrent, par.odometry_link_id,-1);
+  MapPointNormal::PublishMap("/current_normals", Pcurrent, Tcurrent, par.odometry_link_id,-1,0.5);
   pcl::PointCloud<pcl::PointXYZI> cld_latest = FormatScanMsg(*cloud, Tcurrent);
   nav_msgs::Odometry msg_current = FormatOdomMsg(Tcurrent, Tmot, t, cov_vek.back());
   pubsrc_cloud_latest.publish(cld_latest);
@@ -215,13 +199,13 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
     tf::Transform Tf;
     std::vector<tf::StampedTransform> trans_vek;
     tf::transformEigenToTF(Tcurrent, Tf);
-    trans_vek.push_back(tf::StampedTransform(Tf, t, par.odometry_link_id, "sensor_est"));
-    trans_vek.push_back(tf::StampedTransform(Tf, t, par.odometry_link_id, "base_link"));
+    trans_vek.push_back(tf::StampedTransform(Tf, t, par.odometry_link_id, "radar_link"));
     Tbr.sendTransform(trans_vek);
   }
 
   const Eigen::Affine3d Tkeydiff = keyframes_.back().first.inverse()*Tcurrent;
   bool fuse = KeyFrameBasedFuse(Tkeydiff, par.use_keyframe, par.min_keyframe_dist_, par.min_keyframe_rot_deg_);
+
 
   CFEAR_Radarodometry::timing.Document("velocity", Tmot.translation().norm()/Tsensor);
 
@@ -253,6 +237,7 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   CFEAR_Radarodometry::timing.Document("register", ToMs(t3-t2));
   CFEAR_Radarodometry::timing.Document("publish_etc", ToMs(t4-t3));
   T_prev = Tcurrent;
+
 }
 
 void OdometryKeyframeFuser::pointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg_in){

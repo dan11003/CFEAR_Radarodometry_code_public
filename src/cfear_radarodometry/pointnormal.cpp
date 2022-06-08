@@ -434,20 +434,41 @@ void intToRGB(const int value,float& red,float& green, float& blue) {
 }
 
 
-visualization_msgs::MarkerArray Cells2Markers(std::vector<cell>& cells, const ros::Time& time, const std::string& frame, int val){
+visualization_msgs::MarkerArray Cells2Markers(std::vector<cell>& cells, const ros::Time& time, const std::string& frame, int val, float alpha){
   visualization_msgs::MarkerArray marr;
   visualization_msgs::Marker m = DefaultMarker(time, frame);
 
+
+  if(val==-1){ //Red
+    m.color.r = 1;
+    m.color.g = 0;
+    m.color.b = 0;
+    m.color.a = 1;
+  }
+  else if(val==-2){//blue
+    m.color.r = 0;
+    m.color.g = 0;
+    m.color.b = 1;
+    m.color.a = 1;
+  }
+  else if(val==-3){//Red
+    m.color.r = 1;
+    m.color.g = 0;
+    m.color.b = 0;
+    m.color.a = 1;
+  }
+  else if(val==-4){//green
+    m.color.r = 0;
+    m.color.g = 1;
+    m.color.b = 0;
+    m.color.a = 1;
+  }
+  else
+    intToRGB(val, m.color.r, m.color.g, m.color.b);
+
   for(int i=0 ; i<cells.size() ; i++){
     m.points.clear();
-    if(val==-1){
-      m.color.r = 1;
-      m.color.g = 0;
-      m.color.b = 0;
-      m.color.a = 1;
-    }
-    else
-      intToRGB(val, m.color.r, m.color.g, m.color.b);
+
     Eigen::Vector2d u = cells[i].u_;
     double d = cells[i].scale_;
     //Eigen::Vector2d end = u + 3*cells[i].snormal_;//*d;//+ cells[i].Affine3d*log(d/2);
@@ -511,8 +532,98 @@ double cell::GetAngle(){
   double alpha = atan2(snormal_(1), snormal_(0));
   return alpha;
 }
+void MapPointNormal::PublishDataAssociationsMap(const std::string& topic, const std::vector<std::tuple<Eigen::Vector2d,Eigen::Vector2d,double,int> >& vis_residuals){
+  std::map<std::string, ros::Publisher>::iterator it = MapPointNormal::pubs.find(topic);
+  if (it == pubs.end()){
+    ros::NodeHandle nh("~");
+    pubs[topic] =  nh.advertise<visualization_msgs::MarkerArray>(topic,100);
+    it = MapPointNormal::pubs.find(topic);
+  }
+  visualization_msgs::Marker m; //= DefaultMarker(ros::Time::now(), frame_id);
+  m.action = visualization_msgs::Marker::DELETEALL;
+  visualization_msgs::MarkerArray marr_delete;
+  marr_delete.markers.push_back(m);
+  it->second.publish(marr_delete);
 
-void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eigen::Affine3d& T, const std::string& frame_id, const int value){
+
+  visualization_msgs::MarkerArray marr;
+
+  ros::Time t = ros::Time::now();
+
+  visualization_msgs::Marker def_marker = DefaultMarker(t, "world");
+  def_marker.pose.orientation.w = 1.0;
+  def_marker.scale.x = 0.1;
+  def_marker.scale.y = 0.1;
+  def_marker.scale.z = 0;
+  def_marker.header.frame_id = "world";
+
+  def_marker.action = visualization_msgs::Marker::ADD;
+
+  def_marker.header.stamp = t;
+  def_marker.type = visualization_msgs::Marker::ARROW;
+  def_marker.ns = "test";
+  def_marker.id = 0;
+
+
+  std_msgs::ColorRGBA cfrom, cto, red, green, blue, color, black;
+  red.r = 1;   red.g = 0,   red.b = 0;   red.a = 1;
+  green.r = 0; green.g = 1; green.b = 0; green.a = 1;
+  blue.r = 0;  blue.g = 0;  blue.b = 1;  red.a = 1;
+
+  black.r = 0;  black.g = 0;  black.b = 0;  black.a = 1;
+  cfrom.b = cto.b = 0.0;
+  cfrom.g = cto.g = 0.0;
+  cfrom.a = cto.a = 1.0;
+
+  double max_w = 0, min_w = DBL_MAX;
+  for(auto && tuple : vis_residuals){
+    max_w = std::max(max_w, std::get<2>(tuple));
+    min_w = std::min(min_w, std::get<2>(tuple));
+  }
+  max_w = max_w + 0.1;
+  min_w = min_w - 0.1;
+
+
+  for(auto && tuple : vis_residuals){
+    geometry_msgs::Point pfrom, pto;
+    //cout<<"from: "<<std::get<0>(tuple)<<endl;
+    //cout<<"from: "<<std::get<1>(tuple)<<endl;
+    pfrom.x = std::get<0>(tuple).x();
+    pfrom.y = std::get<0>(tuple).y();
+
+    pto.x = std::get<1>(tuple).x();
+    pto.y = std::get<1>(tuple).y();
+    color = black;
+    double alpha =(std::get<2>(tuple)-min_w)/(max_w-min_w);
+    color.a = alpha; //std::max(alpha,0.0);
+    double min_width = 0.1;
+    def_marker.scale.x = def_marker.scale.y = 0.04 + 0.13*alpha;
+    //cout<<"a: "<<color.a<<", min: "<<min_w<<", max: "<<max_w<<endl;
+    /*
+    if(std::get<3>(tuple) == 0)
+      color = blue;
+    else if(std::get<3>(tuple) == 1)
+      color = red;
+    else if(std::get<3>(tuple) == 2)
+      color = green;
+    pto.z = std::get<3>(tuple);*/
+    def_marker.color = color;
+
+
+    def_marker.points.insert(def_marker.points.end(), {pto,pfrom} );
+    //def_marker.colors.insert(def_marker.colors.end(), {color,color} );
+    marr.markers.push_back(def_marker);
+    def_marker.id++;
+    def_marker.points.clear();
+
+  }
+
+
+  it->second.publish(marr);
+
+}
+
+void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eigen::Affine3d& T, const std::string& frame_id, const int value, float alpha){
   if(map==NULL)
     return;
 
@@ -530,7 +641,7 @@ void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eige
   it->second.publish(marr_delete);
   std::vector<cell> cells = map->TransformCells(T);
 
-  visualization_msgs::MarkerArray marr = Cells2Markers(cells, ros::Time::now(), frame_id, value);
+  visualization_msgs::MarkerArray marr = Cells2Markers(cells, ros::Time::now(), frame_id, value, alpha);
   it->second.publish(marr);
   visualization_msgs::MarkerArray marr_text(marr);
   for(size_t i = 0; i<cells.size() ; i++){

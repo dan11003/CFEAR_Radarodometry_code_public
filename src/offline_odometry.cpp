@@ -142,7 +142,7 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("min_distance", po::value<double>()->default_value(2.5), "min sensor distance")
         ("max_distance", po::value<double>()->default_value(200), "mib sensor distance ")
         ("submap_scan_size", po::value<int>()->default_value(3), "submap_scan_size")
-        ("weight_intensity", po::value<bool>()->default_value(false),"weight_intensity")
+        ("weight_intensity", po::value<bool>()->default_value(true),"weight_intensity")
         ("k_strongest", po::value<int>()->default_value(12), "kstrongest points filtering")
         ("job_nr", po::value<int>()->default_value(-1), "jobnr")
         ("registered_min_keyframe_dist", po::value<double>()->default_value(1.5), "registered_min_keyframe_dist")
@@ -154,7 +154,7 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("cost_type", po::value<std::string>()->default_value("P2L"), "P2L")
         ("loss_type", po::value<std::string>()->default_value("Huber"), "robust loss function eg. Huber Caunchy, None")
         ("loss_limit", po::value<double>()->default_value(0.1), "loss limit")
-        ("covar_scale", po::value<double>()->default_value(1), "covar scale")
+        ("covar_scale", po::value<double>()->default_value(0.1), "covar scale")
         ("regularization", po::value<double>()->default_value(1), "regularization")
         ("est_directory", po::value<std::string>()->default_value(""), "output folder of estimated trajectory")
         ("gt_directory", po::value<std::string>()->default_value(""), "output folder of ground truth trajectory")
@@ -231,7 +231,8 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
 
     par.weight_intensity_ = vm["weight_intensity"].as<bool>();;
     par.compensate = !vm["disable_compensate"].as<bool>();
-    par.soft_constraint= vm["soft_constraint"].as<bool>();
+    par.use_guess = true; //vm["soft_constraint"].as<bool>();
+    par.soft_constraint = false; // soft constraint is rarely useful, this is changed for testing of initi // vm["soft_constraint"].as<bool>();
     par.radar_ccw = vm["radar_ccw"].as<bool>();
 
 }

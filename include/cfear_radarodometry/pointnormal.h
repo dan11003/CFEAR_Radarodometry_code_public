@@ -184,7 +184,9 @@ private:
 public:
 
 
-  static void PublishMap(const std::string& topic, MapNormalPtr map, Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
+  static void PublishMap(const std::string& topic, MapNormalPtr map, Eigen::Affine3d& T, const std::string& frame_id, const int value=0, float alpha = 1.0);
+
+  static void PublishDataAssociationsMap(const std::string& topic, const std::vector<std::tuple<Eigen::Vector2d,Eigen::Vector2d,double,int> >& vis_residuals);
 
   static std::map<std::string, ros::Publisher> pubs;
 
@@ -196,7 +198,7 @@ public:
 
 visualization_msgs::Marker DefaultMarker( const ros::Time& time, const std::string& frame);
 
-visualization_msgs::MarkerArray Cells2Markers(std::vector<cell>& cells, const ros::Time& time, const std::string& frame, const int val=0 );
+visualization_msgs::MarkerArray Cells2Markers(std::vector<cell>& cells, const ros::Time& time, const std::string& frame, const int val=0, float alpha = 1);
 
 void intToRGB(int value,float& red,float& green, float& blue);
 

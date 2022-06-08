@@ -73,6 +73,8 @@ private:
   std::vector<double> vel_parameters_;
   bool ccw_ = false;
 
+  //std::vector<std::tuple<Eigen::Vector2d,Eigen::Vector2d,double,int> > vis_residuals;
+
 };
 
 class RegistrationCost{

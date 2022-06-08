@@ -90,6 +90,10 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
 
 
   bool success = true;
+  static int count = 0;
+  bool stop = false;
+  if(count++>150)
+    stop = true;
 
 
   std::vector<double> prev_par = parameters.back();
@@ -98,10 +102,22 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
     scan_associations_.clear();
     weight_associations_.clear();
     success = BuildOptimizationProblem(scans, reg_cov.back(), guess, soft_constraints);
+    /*MapPointNormal::PublishMap("/before_matching_t", scans.back(), Tsrc.back(), "world",-4,0.5);
+    for(int i=0;i<Tsrc.size()-1;i++){
+      MapPointNormal::PublishMap("/before_matching_k"+std::to_string(i), scans[i], Tsrc[i], "world",-i-1,0.5);
+    }
+    MapPointNormal::PublishDataAssociationsMap("associations_residuals", vis_residuals);*/
+    //vis_residuals.clear();
+
+
     if(!success)
       break;
 
     success = SolveOptimizationProblem();
+    //  FOr visualization only
+    if(success)
+      for(size_t i = 0 ; i<n_scans ; i++)
+        Tsrc[i] = vectorToAffine3d(parameters[i]);
     double current_score = summary_.final_cost;
     const double rel_improvement = (prev_score-current_score)/prev_score;
     const Eigen::Vector2d trans_diff(parameters.back()[0] - prev_par[0],parameters.back()[1] - prev_par[1]);
@@ -131,6 +147,11 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
     }
     prev_score = current_score;
     prev_par = parameters.back();
+    /*MapPointNormal::PublishMap("/before_matching_t", scans.back(), Tsrc.back(), "world",-4, 0.5);
+    for(int i=0;i<Tsrc.size()-1;i++){
+      MapPointNormal::PublishMap("/before_matching_k"+std::to_string(i), scans[i], Tsrc[i], "world",-i-1,0.5);
+    }
+    MapPointNormal::PublishDataAssociationsMap("associations_residuals", vis_residuals);*/
     //cout<<"build: "<<t2-t1<<", solve: "<<t3-t2<<endl;
   }
   //cout<<"itrs: "<<itr<<endl;
@@ -204,7 +225,7 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
   Eigen::Affine2d Tsrctotar = Ttar.inverse()*Tsrc;    // Associate in global reference frame based normals and center
   //cout<<"tar: "<<scan_idx_tar<<", src: "<<scan_idx_src<<", par: "<<parameters.size()<<endl;
   for(size_t src_idx=0 ; src_idx<src_local->GetSize() ; src_idx++){
-    if(time_continuous_){
+    if(time_continuous_){ // Actually doesn't improve the results
       if (scan_idx_src != parameters.size()-1) {
         cout<<"error index, "<<scan_idx_src<<","<<parameters.size()-1<<endl;
         exit(0);
@@ -224,20 +245,21 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
       Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(src_idx);// src.block<2,1>(0,src_idx);
       Eigen::Vector2d tar_normal = target_local->GetNormal2d(tar_idx);  //.block<2,1>(0,tar_idx);
       const double direction_similarity = std::max(src_normal_trans.dot(tar_normal), 0.0);
-      //if(direction_similarity > angle_outlier){ // Tested without, gives slightly worse performance
+      if(direction_similarity > angle_outlier){ // Tested without, gives slightly worse performance
 
-      const double n_src = src_local->GetCell(src_idx).Nsamples_;
-      const double n_tar = target_local->GetCell(tar_idx).Nsamples_;
+        const double n_src = src_local->GetCell(src_idx).Nsamples_;
+        const double n_tar = target_local->GetCell(tar_idx).Nsamples_;
 
-      const double plan_src = src_local->GetCell(src_idx).GetPlanarity();
-      const double plan_tar = target_local->GetCell(tar_idx).GetPlanarity();
+        const double plan_src = src_local->GetCell(src_idx).GetPlanarity();
+        const double plan_tar = target_local->GetCell(tar_idx).GetPlanarity();
 
-      weight_associations_[scan_pair].push_back(Weights(n_src, n_tar, direction_similarity, plan_src, plan_tar));
-      scan_associations_[scan_pair].push_back(std::make_pair(tar_idx,src_idx));
+        weight_associations_[scan_pair].push_back(Weights(n_src, n_tar, direction_similarity, plan_src, plan_tar));
+        scan_associations_[scan_pair].push_back(std::make_pair(tar_idx,src_idx));
 
-      if(++n_terms==max_n_terms)
-        break;
-      //
+        if(++n_terms==max_n_terms)
+          break;
+
+      }
     }
   }
 
@@ -248,7 +270,11 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
     const double time_scale = time_continuous_ ? stamps.find(ass_src_idx)->second : 0;
     const Eigen::Vector2d tar_mean = target_local->GetMean2d(ass_tar_idx);
     const Eigen::Vector2d src_mean = src_local->GetMean2d(ass_src_idx);
+    const Eigen::Vector2d tar_mean_world = Ttar*tar_mean;
+    const Eigen::Vector2d src_mean_world = Tsrc*src_mean;
     const double weight_after_loss = weight_associations_[scan_pair][i].GetWeight(weight_opt_);
+
+    //vis_residuals.push_back(std::make_tuple(src_mean_world,tar_mean_world,weight_after_loss,scan_idx_tar));
     //cout << "weight_after_loss: " << weight_after_loss <<", weight_opt_" <<weight_opt_<< endl;
     ceres::LossFunction* ceres_loss = new ceres::ScaledLoss(GetLoss(), weight_after_loss, ceres::TAKE_OWNERSHIP); // Important, loss should be applied after Mr. Huber
 
@@ -341,13 +367,12 @@ bool n_scan_normal_reg:: BuildOptimizationProblem(std::vector<MapNormalPtr>& sca
       if( !(fixedBlock_[j] && fixedBlock_[i]) && i!=j){ // if not both fixed, and i!=j
         if( (mode_ == incremental_last_to_previous && j > i && !fixedBlock_[j])
             || mode_ == many_to_many_refinement){ // only refine last parameter
+
           AddScanPairCost(scans[i], scans[j], Tvek[i], Tvek[j], i, j);
         }
       }
 
-  //for(auto && as : scan_associations_){
-  //  cout<<as.first.first<<" - "<<as.first.second<<" : "<<as.second.size()<<endl;
-  //}
+
   if(problem_->NumResiduals()<=1)
     return false;
 

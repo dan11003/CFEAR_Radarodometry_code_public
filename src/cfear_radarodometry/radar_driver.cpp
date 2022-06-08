@@ -104,11 +104,11 @@ void radarDriver::CallbackOxford(const sensor_msgs::ImageConstPtr &radar_image_p
   else{
     StructuredKStrongest filt(cv_polar_image, par.z_min, par.k_strongest, par.min_distance, par.range_res);
     filt.getPeaksFilteredPointCloud(cloud_filtered, false);
-/* // For visualization of k=1,12,40. Fig.3 in paper.
+ // For visualization of k=1,12,40. Fig.3 in paper.
     static ros::NodeHandle nh("~");
 
 
-
+    /* For figures presnted in CFEAR Radarodometry - Lidar-levle localization with radar
     static ros::Publisher pub1 = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>("kstrong1", 100);
     static ros::Publisher pub12 = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>("kstrong12", 100);
     static ros::Publisher pub40 = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>("kstrong40", 100);
@@ -133,8 +133,14 @@ void radarDriver::CallbackOxford(const sensor_msgs::ImageConstPtr &radar_image_p
     pub1.publish(*cloud_filtered1);
     pub12.publish(*cloud_filtered12);
     pub40.publish(*cloud_filtered40);
+    Eigen::Affine3d T = Eigen::Affine3d::Identity();
+    CFEAR_Radarodometry::MapNormalPtr Pcurrent = CFEAR_Radarodometry::MapNormalPtr(new MapPointNormal(cloud_filtered12, 3.0, Eigen::Vector2d(0,0), true, false));
+    MapPointNormal::PublishMap("/current_normals_k12",Pcurrent,T, "world", 0);
+    CFEAR_Radarodometry::MapNormalPtr Pcurrent2 = CFEAR_Radarodometry::MapNormalPtr(new MapPointNormal(cloud_filtered40, 3.0, Eigen::Vector2d(0,0), true, false));
+    MapPointNormal::PublishMap("/current_normals_k40", Pcurrent2, T, "world", 0);
     char c = std::getchar();
     */
+
   }
 
 

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+    <node pkg="cfear_radarodometry" type="radar_filter_node" name="radar_filter_node" output="log">
+        <param name="z_min" value="60"/>
+        <param name="range_res" value="0.059"/> <!-- dataset specific parameter -->
+        <param name="dataset" value="mulran"/> <!-- dataset specific parameter -->
+        <param name="min_distance" value="2.5"/>
+        <param name="kstrongest" value="30"/>
+        <param name="radar_frameid" value="radar_polar"/>
+    </node>
+</launch>
