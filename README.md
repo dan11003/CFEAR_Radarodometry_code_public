@@ -4,8 +4,9 @@
 
 # CFEAR Radarodometry
 This guide describes how to download data and estimate radar odometry using CFEAR_Radarodometry
+![final odometry](odometry_oxford.jpg)
   
-## prerequisites
+## Prerequisites
   * Google Ceres solver  http://ceres-solver.org/installation.html
   * ROS Melodic or later
 
@@ -37,8 +38,24 @@ The odometry an be launched in two modes.
 
 ```
 roscd cfear_radarodometry/launch
-./oxford_demo #
+./oxford_demo 
 ```
+## Updates
+Follow our updates [here](https://github.com/dan11003/CFEAR_Radarodometry).
+
+This repository is based on the conference paper presented at [IROS 2021](https://ieeexplore.ieee.org/document/9636253). Journal is currently under review.
+<details>
+<summary>Bibtex</summary>
+ 
+```
+@INPROCEEDINGS{9636253,  author={Adolfsson, Daniel and Magnusson, Martin and Alhashimi, Anas and Lilienthal, Achim J. and Andreasson, Henrik},
+booktitle={2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+title={CFEAR Radarodometry - Conservative Filtering for Efficient and Accurate Radar Odometry},
+year={2021},  volume={},  number={},  pages={5462-5469},
+doi={10.1109/IROS51168.2021.9636253}}
+  
+```
+</details>  
 
 
 ## Troubleshooting
