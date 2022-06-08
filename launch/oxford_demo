@@ -12,8 +12,8 @@ current_date=`date '+%Y-%m-%d_%H:%M'`
 EVALUATION_description="cfear-x"
 
 
-BAG_BASE_PATH="/home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/"
-BAG_FILE_PATH="${BAG_BASE_PATH}/2019-01-10-12-32-52-radar-oxford-10k.bag"
+BAG_BASE_PATH="/home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/" #Must be set, will contain the output of the odometry
+BAG_FILE_PATH="${BAG_BASE_PATH}/2019-01-10-12-32-52-radar-oxford-10k.bag" #can changed to any location
 echo "Bag file: ${BAG_FILE_PATH}"
 EVAL_BASE_DIR="${BAG_BASE_PATH}/eval/${current_date}"
 est_dir="${EVAL_BASE_DIR}/est/"
