@@ -1,18 +1,46 @@
-CFEAR Radarodometry
-
-Install prerequisites
-*Google Ceres solver  http://ceres-solver.org/installation.html
-*ROS Melodic or later
 
 
+
+
+# CFEAR Radarodometry
+This guide describes how to download data and estimate radar odometry using CFEAR_Radarodometry
+  
+## prerequisites
+  * Google Ceres solver  http://ceres-solver.org/installation.html
+  * ROS Melodic or later
+
+
+Ask questions [here](https://github.com/dan11003/CFEAR_Radarodometry_code_public/issues).
+
+## How to build with catkin
+
+```
+$ cd ~/catkin_ws/src/
+$ git clone https://github.com/dan11003/CFEAR_Radarodometry_code_public.git
+$ cd ~/catkin_ws
+$ catkin_make -DCMAKE_BUILD_TYPE=Release 
+$ source ~/catkin_ws/devel/setup.bash
+```
+## Downloading data (Oxford Radar Robotcar)
+Currently, only rosbags that contain sensor_msgs/Image are supported.
+We prepared a rosbag from the Oxford Radar Robotcar dataset on our [google drive](https://drive.google.com/drive/folders/12YNIvHQqSO5Et3UIzKD1z3XQACpoGZ1L?usp=sharing)
+Download the file Oxford (processed rosbag)/2019-01-10-12-32-52-radar-oxford-10k.bag to the folder created below:
+```
+mkdir -p /home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/
+cd /home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/
+```
+
+## Running
 The odometry an be launched in two modes.
-*Online: Standard rostopic interface. radar_driver_node and odometry_keyframes. The driver subscribes to "/Navtech/Polar" 
-#NOTE that rosbag play <bagfile> needs to be executed manually
+* Offline: (used in this guide) runs at the maximum possible rate.
+* Online: Standard rostopic interface. radar_driver_node and odometry_keyframes. The radar_driver_node subscribes to "/Navtech/Polar" 
+
+```
+roscd cfear_radarodometry/launch
+./oxford_demo #
+```
 
 
-
-*Offline: Uses the Rosbag API and attempt to estimate odometry at the maximum possible rate.
-cd /radar_mapping/launch/oxford/eval/
-./run_sequence
+## Troubleshooting
 
 
