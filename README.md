@@ -59,5 +59,6 @@ doi={10.1109/IROS51168.2021.9636253}}
 
 
 ## Troubleshooting
+if you run into problems related to rosbag::IO exception. First, check file path then use rosbag reindex to to fix broken header of bag file.
 
 
