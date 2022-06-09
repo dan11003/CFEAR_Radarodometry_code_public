@@ -25,7 +25,7 @@ $ source ~/catkin_ws/devel/setup.bash
 ## Downloading data (Oxford Radar Robotcar)
 Currently, only rosbags that contain sensor_msgs/Image are supported.
 We prepared a rosbag from the Oxford Radar Robotcar dataset on our [google drive](https://drive.google.com/drive/folders/12YNIvHQqSO5Et3UIzKD1z3XQACpoGZ1L?usp=sharing)
-Download the file Oxford (processed rosbag)/2019-01-10-12-32-52-radar-oxford-10k.bag to the folder created below:
+Download the Oxford bag file from (processed rosbag)/2019-01-10-12-32-52-radar-oxford-10k.bag to the folder created below:
 ```
 mkdir -p /home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/
 cd /home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/
@@ -59,6 +59,10 @@ doi={10.1109/IROS51168.2021.9636253}}
 
 
 ## Troubleshooting
-if you run into problems related to rosbag::IO exception. First, check file path then use rosbag reindex to to fix broken header of bag file.
-
+```console
+# Problem
+user@computer:~$ terminate called after throwing an instance of 'rosbag::BagFormatException' what():  Required 'op' field missing
+# Solution
+rosbag reindex 2019-01-10-12-32-52-radar-oxford-10k.bag
+```
 
