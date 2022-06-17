@@ -43,4 +43,8 @@ roscd cfear_radarodometry/launch
 
 ## Troubleshooting
 
+There is a known competability issue related to incompatible versions of LZ4. See [this link](https://github.com/ethz-asl/lidar_align/issues/16) for a dirty fix.
+
+
+
 
