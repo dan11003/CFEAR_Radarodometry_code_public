@@ -356,10 +356,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2153983116149902
+      Pitch: 1.140398383140564
       Target Frame: radar_link
       Value: ThirdPersonFollower (rviz)
-      Yaw: 3.0003979206085205
+      Yaw: 3.1153998374938965
     Saved: ~
 Window Geometry:
   Displays:

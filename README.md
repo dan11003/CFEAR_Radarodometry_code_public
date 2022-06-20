@@ -1,7 +1,6 @@
 
 
 
-
 # CFEAR Radarodometry
 This guide describes how to download data and estimate radar odometry using CFEAR_Radarodometry
   
@@ -37,7 +36,7 @@ The odometry an be launched in two modes.
 
 ```
 roscd cfear_radarodometry/launch
-./oxford_demo #
+./oxford_demo
 ```
 
 
@@ -45,6 +44,16 @@ roscd cfear_radarodometry/launch
 
 There is a known competability issue related to incompatible versions of LZ4. See [this link](https://github.com/ethz-asl/lidar_align/issues/16) for a dirty fix.
 
+## Other files
+For a detailed guide on how to download and format radar data into rosbags, visit our [Oxford converter readme file](https://docs.google.com/document/d/1ij8E4PMpCpBwWYbRAdU9rnScocOaMB4Sqz4XS48XWoo/edit?usp=sharing)
+
+## Future
+
+* Prepare demo for MulRan, VolvoCE, Kvarntorp and Orkla
+
+## Developing
+
+Feel free to issue pull requests with updates.
 
 
 
