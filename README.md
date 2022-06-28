@@ -32,7 +32,7 @@ cd /home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxfor
 ```
 
 ## Running
-The odometry an be launched in two modes.
+The odometry can be launched in two modes.
 * Offline: (used in this guide) runs at the maximum possible rate.
 * Online: Standard rostopic interface. radar_driver_node and odometry_keyframes. The radar_driver_node subscribes to "/Navtech/Polar" 
 
@@ -59,10 +59,35 @@ doi={10.1109/IROS51168.2021.9636253}}
 
 
 ## Troubleshooting
+### Malformed bagfile
 ```console
 # Problem
 user@computer:~$ terminate called after throwing an instance of 'rosbag::BagFormatException' what():  Required 'op' field missing
 # Solution
 rosbag reindex 2019-01-10-12-32-52-radar-oxford-10k.bag
 ```
+### Compilation issue due to incompatible versions of LZ4 in ROS Melodic
+During compilation, this error can occur on some installations of Ubuntu 18.04 with ROS Melodic:
+```console
+/usr/include/flann/ext/lz4.h:196:57: error: conflicting declaration ‘typedef struct LZ4_stream_t LZ4_stream_t’
+ typedef struct { long long table[LZ4_STREAMSIZE_U64]; } LZ4_stream_t;
+...
+/usr/include/lz4.h:196:57: note: previous declaration as ‘typedef struct LZ4_stream_t LZ4_stream_t’
+ typedef struct { long long table[LZ4_STREAMSIZE_U64]; } LZ4_stream_t;
+```
+and
+```console
+/usr/include/flann/ext/lz4.h:249:72: error: conflicting declaration ‘typedef struct LZ4_streamDecode_t LZ4_streamDecode_t’
+ typedef struct { unsigned long long table[LZ4_STREAMDECODESIZE_U64]; } LZ4_streamDecode_t;
+...
+/usr/include/lz4.h:249:72: note: previous declaration as ‘typedef struct LZ4_streamDecode_t LZ4_streamDecode_t’
+ typedef struct { unsigned long long table[LZ4_STREAMDECODESIZE_U64]; } LZ4_streamDecode_t;
+```
+This error is caused by two conflicting versions of LZ4, one used for ROS serialization and the other one by flann kdtree in PCL. As this [GitHub issue](https://github.com/ethz-asl/lidar_align/issues/16) suggests, there are a few ways to fix it, yet none of them can be really considered clean. We suggest using simlinks to point to a single version of the conficting header files, since this modification can be easily reverted:
+```console
+sudo mv /usr/include/flann/ext/lz4.h /usr/include/flann/ext/lz4.h.bak
+sudo mv /usr/include/flann/ext/lz4hc.h /usr/include/flann/ext/lz4.h.bak
 
+sudo ln -s /usr/include/lz4.h /usr/include/flann/ext/lz4.h
+sudo ln -s /usr/include/lz4hc.h /usr/include/flann/ext/lz4hc.h
+```
