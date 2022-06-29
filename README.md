@@ -34,21 +34,30 @@ roscd cfear_radarodometry/launch
 ./oxford_demo
 ```
 
-## Evaluate odometry quality
+## Optional -  Evaluate odometry quality
 
 ```
 cd ~/catkin_ws/src/
-git clone https://github.com/dan11003/radar_kitti_benchmark
+git clone https://github.com/dan11003/radar_kitti_benchmark 
 cd radar_kitti_benchmark/python
 ./oxford_demo_eval.sh
 ```
 
 This will compute odometry error metrics and draw graphs and figures and save these to the folder:
 ```
-/home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/eval/
+/home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/eval/<yyyy-mm-dd_HH:mm>,`
 ```
-You'll find each experiment within a subfolder named 
-```<yyyy-mm-dd_HH:mm>```
+where the folder name <yyyy-mm-dd_HH:mm>  is set automatically according to time.
+
+Some of the evaluation output is:
+ * The raw trajectory (/est/01.txt)
+ * Trajectory visualized (/est/plot_path/sequence_01_orig.pdf)  -  similar to Fig.15a in the article
+ * Error metrics (/est/result.txt). -  Tab.III (row "CFEAR-3", column "10-12-32") in the article.
+ * Parameters  (pars.txt)  - Tab.I (column "CFEAR-3")  in the article
+ 
+ 
+NOTE: Results are slightly better compared to the article.
+
 
 ## Troubleshooting
 
