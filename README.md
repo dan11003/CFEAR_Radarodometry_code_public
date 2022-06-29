@@ -4,7 +4,7 @@ This guide describes how to download data and estimate radar odometry using CFEA
   
 ## Prerequisites
   * Install the Google Ceres solver  http://ceres-solver.org/installation.html
-  * ROS [Melodic](http://wiki.ros.org/melodic) or later
+  * ROS [Melodic](http://wiki.ros.org/melodic) or later, tested with ubuntu 16.04, 18.04 and 20.04
 
 ## How to build with catkin
 
@@ -32,13 +32,27 @@ The odometry can be launched in two modes.
 ```
 roscd cfear_radarodometry/launch
 ./oxford_demo
-
 ```
 
+## Evaluate odometry quality
+
+```
+cd ~/catkin_ws/src/
+git clone https://github.com/dan11003/radar_kitti_benchmark
+cd radar_kitti_benchmark/python
+./oxford_demo_eval.sh
+```
+
+This will compute odometry error metrics and draw graphs and figures and save these to the folder:
+```
+/home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/eval/
+```
+You'll find each experiment within a subfolder named 
+```<yyyy-mm-dd_HH:mm>```
 
 ## Troubleshooting
 
-If the fixes below does not help. Ask questions [here](https://github.com/dan11003/CFEAR_Radarodometry_code_public/issues).
+If the fixes below does not help. Ask questions [here](https://github.com/dan11003/CFEAR_Radarodometry/issues).
 
 ### Malformed bagfile
 ```console

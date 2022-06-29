@@ -70,6 +70,7 @@ bool n_scan_normal_reg::RegisterTimeContinuous(std::vector<MapNormalPtr>& scans,
   ccw_ = ccw;
   bool status = Register(scans, Tsrc, reg_cov, soft_constraints);
   time_continuous_ = false;
+  return status;
   //cout<<"vel: "<<prev_parameters_[0]<<", "<<prev_parameters_[1]<<", "<<prev_parameters_[2]<<endl;
 }
 
