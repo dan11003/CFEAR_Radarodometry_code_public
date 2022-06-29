@@ -17,6 +17,7 @@ std::string Filter2str(const filtertype& filter){
   case filtertype::CACFAR: return "CA-CFAR";
   case kstrong: return "kstrong";
   }
+  return "kstrong";
 }
 
 radarDriver::radarDriver(const Parameters& pars, bool disable_callback):par(pars),nh_("~"), it(nh_) {

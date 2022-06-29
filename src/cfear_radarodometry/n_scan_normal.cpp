@@ -153,6 +153,7 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
     }
     MapPointNormal::PublishDataAssociationsMap("associations_residuals", vis_residuals);*/
     //cout<<"build: "<<t2-t1<<", solve: "<<t3-t2<<endl;
+    return success;
   }
   //cout<<"itrs: "<<itr<<endl;
   CFEAR_Radarodometry::timing.Document("itrs", (double)itr_);
