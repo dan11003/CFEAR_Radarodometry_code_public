@@ -89,12 +89,7 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
   Eigen::Vector3d guess;
   Affine3dToEigVectorXYeZ(Tsrc.back(), guess);
 
-
   bool success = true;
-  static int count = 0;
-  bool stop = false;
-  if(count++>150)
-    stop = true;
 
 
   std::vector<double> prev_par = parameters.back();
@@ -154,7 +149,7 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
     }
     MapPointNormal::PublishDataAssociationsMap("associations_residuals", vis_residuals);*/
     //cout<<"build: "<<t2-t1<<", solve: "<<t3-t2<<endl;
-    return success;
+//return success;
   }
   //cout<<"itrs: "<<itr<<endl;
   CFEAR_Radarodometry::timing.Document("itrs", (double)itr_);
@@ -247,7 +242,7 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
       Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(src_idx);// src.block<2,1>(0,src_idx);
       Eigen::Vector2d tar_normal = target_local->GetNormal2d(tar_idx);  //.block<2,1>(0,tar_idx);
       const double direction_similarity = std::max(src_normal_trans.dot(tar_normal), 0.0);
-      if(direction_similarity > angle_outlier){ // Tested without, gives slightly worse performance
+      if(direction_similarity > angle_outlier){ // Gives slightly better accuracy and runtime-performance
 
         const double n_src = src_local->GetCell(src_idx).Nsamples_;
         const double n_tar = target_local->GetCell(tar_idx).Nsamples_;

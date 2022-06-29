@@ -154,7 +154,7 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("cost_type", po::value<std::string>()->default_value("P2L"), "P2L")
         ("loss_type", po::value<std::string>()->default_value("Huber"), "robust loss function eg. Huber Caunchy, None")
         ("loss_limit", po::value<double>()->default_value(0.1), "loss limit")
-        ("covar_scale", po::value<double>()->default_value(0.1), "covar scale")
+        ("covar_scale", po::value<double>()->default_value(1), "covar scale")// Please fix combined parameter
         ("regularization", po::value<double>()->default_value(1), "regularization")
         ("est_directory", po::value<std::string>()->default_value(""), "output folder of estimated trajectory")
         ("gt_directory", po::value<std::string>()->default_value(""), "output folder of ground truth trajectory")
