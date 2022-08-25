@@ -25,6 +25,9 @@
 #include "tgmath.h"
 #include "cfear_radarodometry/statistics.h"
 #include "cfear_radarodometry/utils.h"
+#include <boost/serialization/serialization.hpp>
+#include "boost/serialization/vector.hpp"
+
 
 //#include "ndt_map/NDTMapMsg.h"
 //#include "ndt_map/ndt_map.h"
@@ -71,12 +74,33 @@ public:
 
 private:
 
+  cell(){}
+
   cell(const Eigen::Vector2d& u, const double intensity) : // Only for raw data
     u_(u), scale_(1.0), snormal_(1,0), orth_normal(0,1), lambda_min(1),
-    lambda_max(1), sum_intensity_(1.0), avg_intensity_(1.0), Nsamples_(1), valid_(true)
-  {}
+    lambda_max(1), sum_intensity_(1.0), avg_intensity_(1.0), Nsamples_(1), valid_(true){}
 
   bool ComputeNormal(const Eigen::Vector2d& origin);
+
+
+  //EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+    ar & u_;
+    ar & cov_;
+    ar & scale_;
+    ar & snormal_;
+    ar & lambda_min;
+    ar & lambda_max;
+    ar & sum_intensity_;
+    ar & avg_intensity_;
+    ar & Nsamples_;
+    ar & valid_;
+  }
+
+
 
 };
 
@@ -94,13 +118,6 @@ public:
   MapPointNormal(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cld, float radius, const Eigen::Vector2d& origin = Eigen::Vector2d(0,0), const bool weight_intensity = false, const bool raw = false);
 
   MapPointNormal(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cld, float radius, std::vector<cell>& cell_orig, const Eigen::Affine3d& T);
-
-
-  MapPointNormal(){
-    input_ = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>());
-    downsampled_ = pcl::PointCloud<pcl::PointXY>::Ptr(new pcl::PointCloud<pcl::PointXY>());
-
-  }
 
   std::vector<cell> GetCells(){return cells;}
 
@@ -162,6 +179,8 @@ private:
 
   MapPointNormal(pcl::PointCloud<pcl::PointXYZI>& cld);
 
+  MapPointNormal(){} // only for boost serialization
+
   void ComputeSearchTreeFromCells();
 
   void ComputeNormals(const Eigen::Vector2d &origin);
@@ -181,10 +200,39 @@ private:
   float radius_;
   bool weight_intensity_;
 
-public:
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void save(Archive & ar, const unsigned int version) const
+  {
+    // invoke serialization of the base class
+    ar & cells;
+    ar & input_;
+    ar & downsampled_;
+    ar & radius_;
+    ar & weight_intensity_;
+  }
+
+  template<class Archive>
+  void load(Archive & ar, const unsigned int version)
+  {
+    // invoke serialization of the base class
+    ar & cells;
+    ar & input_;
+    ar & downsampled_;
+    ar & radius_;
+    ar & weight_intensity_;
+    kd_cells.setInputCloud(downsampled_);
+
+  }
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
 
 
-  static void PublishMap(const std::string& topic, MapNormalPtr map, Eigen::Affine3d& T, const std::string& frame_id, const int value=0, float alpha = 1.0);
+
+  public:
+
+
+  static void PublishMap(const std::string& topic, MapNormalPtr map, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0, float alpha = 1.0);
 
   static void PublishDataAssociationsMap(const std::string& topic, const std::vector<std::tuple<Eigen::Vector2d,Eigen::Vector2d,double,int> >& vis_residuals);
 

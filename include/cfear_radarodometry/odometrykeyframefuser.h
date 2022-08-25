@@ -42,6 +42,10 @@
 #include "cfear_radarodometry/statistics.h"
 #include "std_msgs/ColorRGBA.h"
 #include "boost/shared_ptr.hpp"
+#include "cfear_radarodometry/types.h"
+#include "cfear_radarodometry/eval_trajectory.h"
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/opencv.hpp>
 
 using std::string;
 using std::cout;
@@ -56,7 +60,7 @@ namespace CFEAR_Radarodometry {
 
 visualization_msgs::Marker GetDefault();
 
-typedef std::vector<std::pair< Eigen::Affine3d, MapNormalPtr> > PoseScanVector;
+typedef std::vector<RadarScan> PoseScanVector;
 
 class OdometryKeyframeFuser {
 
@@ -96,6 +100,7 @@ public:
     double regularization_ = 0.0;
 
     bool publish_tf_ = true;
+    bool store_graph = false;
 
     void GetParametersFromRos( ros::NodeHandle& param_nh){
       param_nh.param<std::string>("input_points_topic", input_points_topic, "/Navtech/Filtered");
@@ -124,6 +129,7 @@ public:
       param_nh.param<bool>("disable_registration", disable_registration, false);
       param_nh.param<bool>("soft_constraint", soft_constraint, false);
       param_nh.param<bool>("compensate", compensate, true);
+      param_nh.param<bool>("store_graph", store_graph, false);
       param_nh.param<std::string>("cost_type", cost_type, "P2L");
 
 
@@ -162,17 +168,24 @@ public:
       stringStream << "regularization, "<<std::to_string(regularization_)<<endl;
       stringStream << "weight intensity, "<<std::boolalpha<<weight_intensity_<<endl;
       stringStream << "publish_tf, "<<std::boolalpha<<publish_tf_<<endl;
+      stringStream << "store graph, "<<store_graph<<endl;
       stringStream << "Weight, "<<weight_opt<<endl;
       return stringStream.str();
     }
   };
 
+  RadarScan scan_;
+  bool updated = false;
+
 
 protected:
-  Eigen::Affine3d Tcurrent, Tprev_fused, T_prev, Tmot;
-  // Components for publishing
+  Eigen::Affine3d Tprev_fused, T_prev, Tmot;
+  Eigen::Affine3d Tcurrent;
+
+  // Components mat publishing
   boost::shared_ptr<n_scan_normal_reg> radar_reg = NULL;
   PoseScanVector keyframes_;
+  simple_graph graph_;
 
   unsigned int frame_nr_ = 0, nr_callbacks_ = 0;
   double distance_traveled = 0.0;
@@ -193,11 +206,15 @@ public:
 
   //~OdometryKeyframeFuser();
 
-  void pointcloudCallback(const pcl::PointCloud<pcl::PointXYZI>::Ptr& msg_in, Eigen::Affine3d& Tcurr);
+  void pointcloudCallback(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered,  pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered_peaks,  Eigen::Affine3d &Tcurr, const ros::Time& t);
 
   std::string GetStatus(){return "Distance traveled: "+std::to_string(distance_traveled)+", nr sensor readings: "+std::to_string(frame_nr_);}
 
   void PrintSurface(const std::string& path, const Eigen::MatrixXd& surface);
+
+  void SaveGraph(const std::string& path);
+
+  void AddGroundTruth(poseStampedVector& gt_vek);
 
 private: 
 
@@ -205,7 +222,7 @@ private:
 
   bool KeyFrameBasedFuse(const Eigen::Affine3d& diff, bool use_keyframe, double min_keyframe_dist, double min_keyframe_rot_deg);
 
-
+  void AddToGraph(PoseScanVector& reference, RadarScan& scan,  const Eigen::Matrix<double,6,6>& Cov);
 
   Eigen::Affine3d Interpolate(const Eigen::Affine3d &T2, double factor, const Eigen::Affine3d &T1 = Eigen::Affine3d::Identity());
 
@@ -215,24 +232,24 @@ private:
 
   pcl::PointCloud<pcl::PointXYZI> FormatScanMsg(pcl::PointCloud<pcl::PointXYZI>& cloud_in, Eigen::Affine3d& T);
 
+  void processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_peaks, const ros::Time& t);
 
-  void processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud);
+  void pointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_filtered);
 
-  void pointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg_in);
 
 
 
 
 };
 
-void AddToReference(PoseScanVector& reference, MapNormalPtr cloud,  const Eigen::Affine3d& T,  size_t submap_scan_size);
+void AddToReference(PoseScanVector& reference, RadarScan& scan, size_t submap_scan_size);
 
 void FormatScans(const PoseScanVector& reference,
-                   const MapNormalPtr& Pcurrent,
-                   const Eigen::Affine3d& Tcurrent,
-                   std::vector<Matrix6d>& cov_vek,
-                   std::vector<MapNormalPtr>& scans_vek,
-                   std::vector<Eigen::Affine3d>& T_vek
-                   );
+                 const MapNormalPtr& Pcurrent,
+                 const Eigen::Affine3d& Tcurrent,
+                 std::vector<Matrix6d>& cov_vek,
+                 std::vector<MapNormalPtr>& scans_vek,
+                 std::vector<Eigen::Affine3d>& T_vek
+                 );
 
 }

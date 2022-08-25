@@ -65,6 +65,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}  ${PCL_
    src/${PROJECT_NAME}/eval_trajectory.cpp #
    src/${PROJECT_NAME}/statistics.cpp # used to measure execution time
    src/${PROJECT_NAME}/cfar.cpp # optional filter
+   src/${PROJECT_NAME}/types.cpp
  )
 
 add_library(${PROJECT_NAME} ${${PROJECT_NAME}_LIB_SRCS})

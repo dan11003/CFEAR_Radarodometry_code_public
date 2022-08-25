@@ -1,9 +1,9 @@
-#include "cfear_radarodometry/eval_trajectory.h"
+﻿#include "cfear_radarodometry/eval_trajectory.h"
 
 namespace CFEAR_Radarodometry {
 
 
-EvalTrajectory::EvalTrajectory(const EvalTrajectory::Parameters& pars, bool disable_callback) :par(pars), nh_("~"),downsampled(new pcl::PointCloud<pcl::PointXYZI>()){
+EvalTrajectory::EvalTrajectory(const EvalTrajectory::Parameters& pars, bool disable_callback) :par(pars), nh_("~"){
 
   if(!disable_callback){
     assert(!par.odom_gt_topic.empty() && !par.odom_est_topic.empty());
@@ -20,7 +20,6 @@ EvalTrajectory::EvalTrajectory(const EvalTrajectory::Parameters& pars, bool disa
   }
   pub_est = nh_.advertise<nav_msgs::Path>("path_est", 10);
   pub_gt = nh_.advertise<nav_msgs::Path>("path_gt", 10);
-  pub_cloud = nh_.advertise<pcl::PointCloud<pcl::PointXYZI>>("map_cloud", 10);
 
 }
 
@@ -45,10 +44,7 @@ void EvalTrajectory::CallbackGTEigen(const poseStamped& Tgt){
 void EvalTrajectory::CallbackESTEigen(const poseStamped& Test){
   est_vek.push_back(Test);
 }
-void EvalTrajectory::CallbackESTEigen(const poseStamped& Test, const pcl::PointCloud<pcl::PointXYZI>& cld){
-  clouds.push_back(cld);
-  CallbackESTEigen(Test);
-}
+
 
 void EvalTrajectory::CallbackGT(const nav_msgs::Odometry::ConstPtr &msg){
   Eigen::Affine3d T;
@@ -56,6 +52,7 @@ void EvalTrajectory::CallbackGT(const nav_msgs::Odometry::ConstPtr &msg){
   tf::poseMsgToEigen(msg->pose.pose, T);
   gt_vek.push_back(std::make_pair(T, t));
 }
+
 
 void EvalTrajectory::CallbackEst(const nav_msgs::Odometry::ConstPtr &msg){
   Eigen::Affine3d T;
@@ -142,16 +139,12 @@ void EvalTrajectory::RemoveExtras(){
     if( fabs( ros::Duration(est_vek.front().second - gt_vek.front().second).toSec() ) > 0.0001  ){
       if(est_vek.front().second < gt_vek.front().second){
         est_vek.erase(est_vek.begin());
-        if(!clouds.empty())
-          clouds.erase(clouds.begin());
       }
       else
         gt_vek.erase(gt_vek.begin());
     }
     else if( fabs( ros::Duration(est_vek.back().second - gt_vek.back().second).toSec() ) > 0.0001  ){
       if(est_vek.back().second > gt_vek.back().second){
-        if(!clouds.empty())
-          clouds.pop_back();
         est_vek.pop_back();
       }
       else
@@ -172,9 +165,7 @@ void EvalTrajectory::Write(const std::string& path, const poseStampedVector& v){
     evalfile<< std::fixed << std::showpoint;
     assert(m.rows()== 4 && m.cols()==4);
 
-    evalfile<< m(0,0) <<" "<< m(0,1) <<" "<< m(0,2) <<" "<< m(0,3) <<" "<<
-               m(1,0) <<" "<< m(1,1) <<" "<< m(1,2) <<" "<< m(1,3) <<" "<<
-               m(2,0) <<" "<< m(2,1) <<" "<< m(2,2) <<" "<< m(2,3) <<std::endl;
+    evalfile<< MatToString(m) <<std::endl;
   }
   evalfile.close();
   return;
@@ -207,13 +198,7 @@ void EvalTrajectory::PrintStatus(){
   cout<<"GT: Last: "<<gt_vek.back().first.translation().transpose()<<" - time: "<<gt_vek.back().second<<endl;
   return;
 }
-void EvalTrajectory::SavePCD(const std::string& folder){
-  for (size_t i=0;i<clouds.size();i++) {
-    pcl::PointCloud<pcl::PointXYZI> cld_transformed;
-    pcl::transformPointCloud(clouds[i], cld_transformed, est_vek[i].first);
-    pcl::io::savePCDFileBinary(folder+"cloud_"+std::to_string(i)+std::string(".pcd"), cld_transformed);
-  }
-}
+
 
 void EvalTrajectory::Save(){
   cout << "Saving, outpout: " << par.est_output_dir << std::endl;
@@ -228,33 +213,18 @@ void EvalTrajectory::Save(){
     boost::filesystem::create_directories(par.est_output_dir);
     std::string est_path = par.est_output_dir+DatasetToSequence(par.sequence);     cout<<"Saving estimate poses only, no ground truth, total: "<<est_vek.size()<<" poses"<<endl;
     cout<<"To path: "<<est_path<<endl;
-    if(par.save_pcd)
-      SavePCD(par.est_output_dir);
     Write(est_path,  est_vek);
     cout<<"Trajectoy saved"<<endl;
     return;
     
-  }else if(est_vek.size()!=gt_vek.size()){
+  }else{
     //PrintStatus();
     //RemoveExtras();
     //PrintStatus();
     One2OneCorrespondance();
   }
-  else if(par.method == "floam"){ // only needed for lidar and mulran to interpolate timetamps
-    One2OneCorrespondance();
-  }
 
-  //AlignTrajectories();
-  /*ros::Rate r(1);
-  //while(ros::ok()){
-    //PublishTrajectory(est_vek, pub_est);
-    PublishTrajectory(gt_vek, pub_gt);
-    downsampled->header.frame_id = std::string("world");
-    ros::Time t = ros::Time::now();
-    pcl_conversions::toPCL(t,downsampled->header.stamp);
-    //pub_cloud.publish(*downsampled);
-    r.sleep();
-  }*/
+
   cout << "create: " << par.gt_output_dir << std::endl;
   boost::filesystem::create_directories(par.gt_output_dir);
   cout << "create: " << par.est_output_dir << std::endl;
@@ -263,15 +233,15 @@ void EvalTrajectory::Save(){
   std::string est_path = par.est_output_dir+DatasetToSequence(par.sequence);
   cout<<"Saving est_vek.size()="<<est_vek.size()<<", gt_vek.size()="<<gt_vek.size()<<endl;
   cout<<"To path: \n\" "<<gt_path<<"\""<<"\n\""<<est_path<<"\""<<endl;
-  if(par.save_pcd)
-    SavePCD(par.est_output_dir);
+
   Write(gt_path, gt_vek);
   Write(est_path,  est_vek);
   cout<<"Trajectories saved"<<endl;
 
   return;
 }
-void EvalTrajectory::AlignTrajectories(){
+
+/*void EvalTrajectory::AlignTrajectories(){
   cout<<"align"<<endl;
   if(est_vek.size()!=gt_vek.size())
     return;
@@ -285,36 +255,25 @@ void EvalTrajectory::AlignTrajectories(){
   Eigen::Affine3d T(transform);
   double sum = 0;
 
-  //pcl::PointCloud<pcl::PointXYZI>::Ptr tmp_merged(new pcl::PointCloud<pcl::PointXYZI>());
-  //pcl::PointCloud<pcl::PointXYZI>::Ptr tmp_statistics_filtered(new pcl::PointCloud<pcl::PointXYZI>());
+
   for(size_t i=0 ; i<n ; i++){
     est_vek[i].first = T.inverse()*est_vek[i].first;
     double d = (est_vek[i].first.translation() - gt_vek[i].first.translation()).norm();
     sum +=d*d;
   }
 
-  /*cout<<"merged size: "<<tmp_merged->size();
-
-
-
-  //pcl::VoxelGrid<pcl::PointXYZ> sor;
-  pcl::RandomSample<pcl::PointXYZI> sor;
-  sor.setInputCloud (tmp_merged);
-  sor.setSample(5000000);
-  //sor.setLeafSize (0.04f, 0.04f, 0.04f);
-  sor.filter (*downsampled);
-*/
   const double ATE = std::sqrt(sum/n);
   cout<<"ATE: "<<ATE<<endl;
   cout<<"result: "<<transform<<endl;
 
-}
-Eigen::Matrix4d EvalTrajectory::best_fit_transform(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B){
-  /*
-    Notice:
-    1/ JacobiSVD return U,S,V, S as a vector, "use U*S*Vt" to get original Matrix;
-    2/ matrix type 'MatrixXd' or 'MatrixXf' matters.
-    */
+}*/
+Eigen::Affine3d best_fit_transform(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B){
+
+  //  Notice:
+  //  1/ JacobiSVD return U,S,V, S as a vector, "use U*S*Vt" to get original Matrix;
+  //  2/ matrix type 'MatrixXd' or 'MatrixXf' matters.
+  //
+
   Eigen::Matrix4d T = Eigen::MatrixXd::Identity(4,4);
   Eigen::Vector3d centroid_A(0,0,0);
   Eigen::Vector3d centroid_B(0,0,0);
@@ -358,10 +317,15 @@ Eigen::Matrix4d EvalTrajectory::best_fit_transform(const Eigen::MatrixXd &A, con
 
   T.block<3,3>(0,0) = R;
   T.block<3,1>(0,3) = t;
-  return T;
+  return Eigen::Affine3d(T);
 
 }
+
+
+
+
 void EvalTrajectory::One2OneCorrespondance(){
+
   cout<<"force one to one. est: "<<est_vek.size()<<", gt: "<<gt_vek.size()<<endl;
   poseStampedVector revised_est, revised_gt;
   poseStampedVector::iterator init_guess = gt_vek.begin();
@@ -371,14 +335,15 @@ void EvalTrajectory::One2OneCorrespondance(){
       revised_est.push_back(est_vek[i]);
       revised_gt.push_back(interp_corr);
     }
-    else
+    else{
       init_guess = gt_vek.begin();//reset guess
+    }
   }
   est_vek.clear();
   gt_vek.clear();
   est_vek = revised_est;
   gt_vek = revised_gt;
-  //cout<<"force one to one. est: "<<est_vek.size()<<", gt: "<<gt_vek.size()<<endl;
+  cout<<"forced one to one. est: "<<est_vek.size()<<", gt: "<<gt_vek.size()<<endl;
   //for(int i=0;i<est_vek.size() && i<gt_vek.size();i+=1){
   //  cout<<"est: "<<est_vek[i].first.translation().transpose()<<" gt: "<<gt_vek[i].first.translation().transpose()<<endl;
   //}
@@ -448,6 +413,37 @@ Eigen::Affine3d EvalTrajectory::pose_interp(double t, double t1, double t2, Eige
 
   return result;
 }
+/*
+void ReadPosesFromFile(const std::string &filepath, std::map<unsigned int,Eigen::Affine3d>& poses){
+
+  cout<<"Opening file: "<<filepath<<endl;
+  string line;
+  int index =0;
+  std::ifstream myfile (filepath);
+  if (myfile.is_open()){
+    while ( getline (myfile,line) ){
+      cout <<"line: " << line << endl;
+      std::vector<double> pose_compoments;
+      std::vector<std::string> tokens;
+      boost::split( tokens, line, boost::is_any_of(" ") );
+      for(int i=0;i<tokens.size()-1;i++){
+        pose_compoments.push_back(std::stod(tokens[i].c_str()));
+      }
+
+      const unsigned int stamp = std::stoul (tokens.back(), nullptr, 0);
+      Eigen::MatrixXd input = Eigen::Map<Eigen::Matrix<double, 3, 4> >(pose_compoments.data());
+      Eigen::Matrix4d m = Eigen::Matrix4d::Identity();
+      m.block<3,4>(0,0) = input;
+      Eigen::Affine3d T(m);
+      poses[stamp] = T;
+      cout  << T.matrix()<< endl;
+    }
+    myfile.close();
+  }
+  else{
+    std::cout<<"couldn't open file"<<endl;
+    exit(0);
+  }*/
 
 
 }

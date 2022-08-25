@@ -33,6 +33,7 @@ namespace po = boost::program_options;
 typedef struct eval_parameters_{
   std::string bag_file_path ="";
   bool save_pcds = false;
+  bool save_radar_img = false;
 }eval_parameters;
 
 
@@ -44,9 +45,9 @@ private:
   ros::NodeHandle nh_;
   ros::Publisher pub_odom;
   EvalTrajectory eval;
+  std::string output_dir;
   radarDriver driver;
   OdometryKeyframeFuser fuser;
-  bool save = true;
   Eigen::Affine3d Toffset = Eigen::Affine3d::Identity();
 
 
@@ -56,7 +57,7 @@ public:
   radarReader(const OdometryKeyframeFuser::Parameters& odom_pars,
               const radarDriver::Parameters& rad_pars,
               const EvalTrajectory::Parameters& eval_par,
-              const eval_parameters& p) : nh_("~"), driver(rad_pars,true), fuser(odom_pars, true), eval(eval_par,true) {
+              const eval_parameters& p) : nh_("~"), driver(rad_pars,true), fuser(odom_pars, true), eval(eval_par,true),output_dir(eval_par.est_output_dir) {
 
     pub_odom = nh_.advertise<nav_msgs::Odometry>("/gt", 1000);
     cout<<"Loading bag from: "<<p.bag_file_path<<endl;
@@ -67,7 +68,7 @@ public:
     rosbag::View view(bag, rosbag::TopicQuery(topics));
 
     int frame = 0;
-    ros::Time tinit;
+
 
     foreach(rosbag::MessageInstance const m, view)
     {
@@ -80,30 +81,39 @@ public:
         nav_msgs::Odometry msg_odom = *odom_msg;
         poseStamped stamped_gt_pose = std::make_pair(Eigen::Affine3d::Identity(), odom_msg->header.stamp);
         tf::poseMsgToEigen(msg_odom.pose.pose, stamped_gt_pose.first);
-        stamped_gt_pose.first = stamped_gt_pose.first*Toffset;//transform into sensor frame
+        stamped_gt_pose.first = stamped_gt_pose.first;//transform into sensor frame
+        Eigen::Matrix4d m = stamped_gt_pose.first.matrix();
+        m(0,2) = 0; m(2,0) = 0; m(2,1) = 0; m(1,2) = 0; m(2,2) = 1; // 3d -> 2d
+        stamped_gt_pose.first = Eigen::Affine3d(m);
+        static Eigen::Affine3d Tfirst_i = stamped_gt_pose.first.inverse();
+        stamped_gt_pose.first = Tfirst_i*stamped_gt_pose.first;
         eval.CallbackGTEigen(stamped_gt_pose);
 
         msg_odom.header.stamp = ros::Time::now();
         msg_odom.header.frame_id = "world";
         pub_odom.publish(msg_odom);
+        //cout << "gt: " << odom_msg->header.stamp.toNSec() << endl;
         continue;
       }
       sensor_msgs::ImageConstPtr image_msg = m.instantiate<sensor_msgs::Image>();
       if(image_msg != NULL) {
+        ros::Time tinit = ros::Time::now();
         //if(frame==0)
-        tinit = ros::Time::now();
-        pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>());
-        driver.CallbackOffline(image_msg, cloud_filtered);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered, cloud_filtered_peaks;
+        driver.CallbackOffline(image_msg, cloud_filtered, cloud_filtered_peaks);
         CFEAR_Radarodometry::timing.Document("Filtered points",cloud_filtered->size());
         Eigen::Affine3d Tcurrent;
-            fuser.pointcloudCallback(cloud_filtered, Tcurrent);
-        //cout<<Tcurrent.translation().transpose()<<endl;
 
-        const ros::Time t = image_msg->header.stamp;
-        if(eval_par.save_pcd)
-          eval.CallbackESTEigen(std::make_pair(Tcurrent, t),*cloud_filtered);
-        else
-          eval.CallbackESTEigen(std::make_pair(Tcurrent, t));
+        fuser.pointcloudCallback(cloud_filtered, cloud_filtered_peaks, Tcurrent, image_msg->header.stamp);
+        if(fuser.updated && p.save_radar_img){
+          std::string path = eval_par.est_output_dir + "/" + std::to_string(image_msg->header.stamp.toNSec())+".png";
+          cv::imwrite(path, driver.cv_polar_image->image);
+        }
+
+
+
+
+        eval.CallbackESTEigen(std::make_pair(Tcurrent, image_msg->header.stamp));
         ros::Time tnow = ros::Time::now();
         ros::Duration d = ros::Duration(tnow-tinit);
         static ros::Duration tot(0);
@@ -121,7 +131,11 @@ public:
   }
 
   void Save(){
-    eval.Save();
+    eval.Save(); // must be called before ground
+    poseStampedVector& vek(eval.GetGtVek());
+    fuser.AddGroundTruth(vek);
+
+    fuser.SaveGraph(output_dir+"simple_graph.sgh");
     return;
   }
 
@@ -166,6 +180,8 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("false-alarm-rate", po::value<float>()->default_value(0.01), "CA-CFAR false alarm rate")
         ("nb-guard-cells", po::value<int>()->default_value(10), "CA-CFAR nr guard cells")
         ("nb-window-cells", po::value<int>()->default_value(10), "CA-CFAR nr guard cells")
+        ("store_graph", po::value<bool>()->default_value(false),"store_graph")
+        ("save_radar_img", po::value<bool>()->default_value(false),"save_radar_img")
         ("bag_path", po::value<std::string>()->default_value("/home/daniel/rosbag/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/radar/2019-01-10-12-32-52-radar-oxford-10k.bag"), "bag file to open");
 
     po::variables_map vm;
@@ -199,7 +215,7 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
     if (vm.count("registered_min_keyframe_dist"))
       par.min_keyframe_dist_= vm["registered_min_keyframe_dist"].as<double>();
     if (vm.count("est_directory"))
-      eval_par.est_output_dir= vm["est_directory"].as<std::string>();
+      eval_par.est_output_dir = vm["est_directory"].as<std::string>();
     if (vm.count("gt_directory"))
       eval_par.gt_output_dir = vm["gt_directory"].as<std::string>();
     if (vm.count("method_name"))
@@ -226,9 +242,9 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
       rad_par.window_size = vm["covar_scale"].as<double>();
 
 
-
+    p.save_radar_img = vm["save_radar_img"].as<bool>();;
     rad_par.filter_type_ = Str2filter(vm["filter-type"].as<std::string>());
-
+    par.store_graph = vm["store_graph"].as<bool>();;
     par.weight_intensity_ = vm["weight_intensity"].as<bool>();;
     par.compensate = !vm["disable_compensate"].as<bool>();
     par.use_guess = true; //vm["soft_constraint"].as<bool>();
@@ -261,6 +277,7 @@ int main(int argc, char **argv)
   std::string par_str = rad_pars.ToString()+odom_pars.ToString()+eval_pars.ToString()+"\nnr_frames, "+std::to_string(reader.GetSize())+"\n"+CFEAR_Radarodometry::timing.GetStatistics();
   ofs<<par_str<<endl;
   ofs.close();
+
 
   return 0;
 }

@@ -417,6 +417,7 @@ bool n_scan_normal_reg::GetCovariance(Matrix6d &Cov){
     double covariance_xx[3 * 3];
     covariance.GetCovarianceBlock(v, v, covariance_xx);
     Eigen::MatrixXd cmat = 10*Eigen::Map<Eigen::Matrix<double,3,3> >(covariance_xx);
+    Cov = Eigen::Matrix<double,6,6>::Identity();
     Cov.block<2,2>(0,0) = cmat.block<2,2>(0,0);
     Cov(5,5) = cmat(2,2);
     Cov(0,5) = cmat(0,2);

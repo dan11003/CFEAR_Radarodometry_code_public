@@ -36,6 +36,7 @@
 #include "pcl_conversions/pcl_conversions.h"
 #include "pcl_ros/point_cloud.h"
 #include "pcl/filters/radius_outlier_removal.h"
+#include "cfear_radarodometry/types.h"
 
 namespace CFEAR_Radarodometry {
 
@@ -51,7 +52,6 @@ using namespace sensor_msgs;
 
 //EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::matrix<double,4,4>)
 
-//typedef std::pair<Eigen::Affine3d, ros::Time> poseStamped;
 typedef std::pair<Eigen::Affine3d, ros::Time> poseStamped;
 typedef std::vector<poseStamped, Eigen::aligned_allocator<poseStamped>> poseStampedVector;
 typedef sync_policies::ApproximateTime<nav_msgs::Odometry, nav_msgs::Odometry> double_odom;
@@ -123,17 +123,15 @@ public:
   void CallbackGTEigen(const poseStamped& Tgt);
 
   void CallbackESTEigen(const poseStamped& Test);
-
-  void CallbackESTEigen(const poseStamped& Test, const pcl::PointCloud<pcl::PointXYZI>& cld);
   
   size_t GetSize(){return std::min(gt_vek.size(),est_vek.size());}
 
-  void AlignTrajectories();
+  //void AlignTrajectories();
+
+  poseStampedVector& GetGtVek(){return gt_vek; }
 
 
 private:
-
-  void SavePCD(const std::string& folder);
 
   void One2OneCorrespondance();
 
@@ -145,7 +143,7 @@ private:
 
   void PublishTrajectory(poseStampedVector& vek, ros::Publisher& pub);
 
-  Eigen::Matrix4d best_fit_transform(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B);
+
 
   void RemoveExtras();
 
@@ -159,18 +157,17 @@ private:
 
   ros::NodeHandle nh_;
   ros::Subscriber sub_est, sub_gt;
-  ros::Publisher pub_est, pub_gt, pub_cloud;
+  ros::Publisher pub_est, pub_gt;
   tf::TransformBroadcaster br;
   Subscriber<nav_msgs::Odometry> *pose_sub_gt = NULL, *pose_sub_est = NULL;
   Synchronizer<double_odom> *sync = NULL;
 
   poseStampedVector est_vek, gt_vek;
-  std::vector<pcl::PointCloud<pcl::PointXYZI>> clouds;
-  pcl::PointCloud<pcl::PointXYZI>::Ptr downsampled;
-
-
 
 };
 
+void ReadPosesFromFile(const std::string &filepath, std::map<unsigned int,Eigen::Affine3d>& poses);
+
+Eigen::Affine3d best_fit_transform(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B);
 
 }
