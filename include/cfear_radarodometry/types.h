@@ -147,9 +147,14 @@ private:
 // The 5 between two vertices in the pose graph. The constraint is the
 // transformation from vertex id_begin to vertex id_end.
 
-typedef enum Constrainttype{odometry=0, loop_appearance, candidate} ConstraintType;
+typedef enum Constrainttype{odometry=0, loop_appearance, mini_loop, candidate} ConstraintType;
+
 
 std::string Constraint2String(const ConstraintType& c);
+#define ODOM_BOUNDS "odom-bounds"
+#define SC_SIM "sc-sim"
+#define CFEAR_COST ""
+#define CFEAR_RESIDUALS ""
 
 struct Constraint3d {
 
@@ -168,7 +173,7 @@ struct Constraint3d {
 
   ConstraintType type;
 
-  std::vector<double> quality;
+  std::map<std::string,double> quality;
 
   std::string info;
 
@@ -183,8 +188,11 @@ struct Constraint3d {
     ar & information;
   }
 };
-//Constraint3d CreateConstraint(unsigned long ibegin, unsigned long iend, Pose3d tbe, Covariance inf, ConstraintType typ){
-//}
+Constraint3d CreateAppearanceConstraint(const unsigned long ibegin, const unsigned long iend, const double apperance_similarity, const Eigen::Affine3d& Tguess = Eigen::Affine3d::Identity());
+
+Constraint3d CreateMiniloopConstraint(const unsigned long ibegin, const unsigned long iend);
+
+Constraint3d CreateCandidateConstraint(const unsigned long ibegin, const unsigned long iend, const std::string& description = "");
 
 typedef std::vector< std::pair<RadarScan, std::vector<Constraint3d>> > simple_graph;
 
@@ -236,6 +244,8 @@ public:
   Eigen::Affine3d RelativeMotion( unsigned int id1, unsigned int id2,  const ConstraintType type = ConstraintType::odometry );
 
   std::string ToString();
+
+  void Statistics(const ConstraintType type = ConstraintType::odometry);
 
 private:
 

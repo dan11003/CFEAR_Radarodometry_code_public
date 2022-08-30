@@ -129,10 +129,33 @@ bool LoadSimpleGraph(const std::string& path, simple_graph &graph){
   }
 }
 
+Constraint3d CreateAppearanceConstraint(const unsigned long ibegin, const unsigned long iend,const double apperance_similarity, const Eigen::Affine3d& Tguess){
+  Constraint3d c;
+  c.id_begin = ibegin; c.id_end = iend; c.type = loop_appearance;  c.quality[SC_SIM] = apperance_similarity;
+  c.t_be = PoseEigToCeres(Tguess);
+  c.quality = {{ODOM_BOUNDS,-1.0},{SC_SIM,-1.0},{CFEAR_COST,-1.0},{CFEAR_RESIDUALS,-1.0}};
+  return c;
+}
+Constraint3d CreateMiniloopConstraint(const unsigned long ibegin, const unsigned long iend){
+  Constraint3d c;
+  c.id_begin = ibegin; c.id_end = iend;
+  c.quality = {{ODOM_BOUNDS,-1.0},{SC_SIM,-1.0},{CFEAR_COST,-1.0},{CFEAR_RESIDUALS,-1.0}};
+  return c;
+}
+Constraint3d CreateCandidateConstraint(const unsigned long ibegin, const unsigned long iend, const std::string& description){
+  Constraint3d c;
+  c.id_begin = ibegin; c.id_end = iend; c.t_be = Pose3d::Identity(); c.information = Eigen::Matrix<double,6,6>::Identity(); c.type = candidate; c.info = description;
+  c.quality = {{ODOM_BOUNDS,-1.0},{SC_SIM,-1.0},{CFEAR_COST,-1.0},{CFEAR_RESIDUALS,-1.0}};
+  return c;
+}
+
+
+
 ConstraintsHandler::ConstraintsHandler()
 {
   constraints_ = { {ConstraintType::odometry,        Constraints() },
                    {ConstraintType::loop_appearance, Constraints() },
+                   {ConstraintType::mini_loop,       Constraints() },
                    {ConstraintType::candidate,       Constraints() }
                  };
 }
@@ -202,6 +225,7 @@ bool ConstraintsHandler::ConstraintExists( unsigned int id1, unsigned int id2, c
 
   }
 }*/
+
 Eigen::Affine3d ConstraintsHandler::RelativeMotion( unsigned int id1, unsigned int id2,  const ConstraintType type){
   Constraint3d Constraint;
   if(FindConstraint(id1,id2, Constraint, type))
