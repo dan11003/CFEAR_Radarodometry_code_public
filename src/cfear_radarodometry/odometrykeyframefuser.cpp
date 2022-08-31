@@ -30,6 +30,7 @@ OdometryKeyframeFuser::OdometryKeyframeFuser(const Parameters& pars, bool disabl
 
   Tprev_fused = Eigen::Affine3d::Identity();
   Tcurrent = Eigen::Affine3d::Identity();
+  cov_current = Covariance::Identity();
   T_prev = Eigen::Affine3d::Identity();
   Tmot = Eigen::Affine3d::Identity();
 
@@ -186,6 +187,7 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   }
 
   Tcurrent = T_vek.back();
+  cov_current = cov_vek.back();
   Eigen::Affine3d Tmot_current = T_prev.inverse()*Tcurrent;
   if(!AccelerationVelocitySanityCheck(Tmot, Tmot_current))
     Tcurrent = Tguess; //Insane acceleration and speed, lets use the guess.
@@ -194,7 +196,7 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
 
   MapPointNormal::PublishMap("/current_normals", Pcurrent, Tcurrent, par.odometry_link_id,-1,0.5);
   pcl::PointCloud<pcl::PointXYZI> cld_latest = FormatScanMsg(*cloud, Tcurrent);
-  nav_msgs::Odometry msg_current = FormatOdomMsg(Tcurrent, Tmot, t, cov_vek.back());
+  nav_msgs::Odometry msg_current = FormatOdomMsg(Tcurrent, Tmot, t, cov_current);
   pubsrc_cloud_latest.publish(cld_latest);
   pose_current_publisher.publish(msg_current);
   if(par.publish_tf_){
@@ -269,6 +271,12 @@ void OdometryKeyframeFuser::pointcloudCallback(pcl::PointCloud<pcl::PointXYZI>::
 
 }
 
+void OdometryKeyframeFuser::pointcloudCallback(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered,  pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered_peaks,  Eigen::Affine3d &Tcurr, const ros::Time& t, Covariance &cov_curr){
+    pointcloudCallback(cloud_filtered, cloud_filtered_peaks, Tcurr, t);
+    cov_curr = cov_current;
+}
+
+
 void OdometryKeyframeFuser::PrintSurface(const std::string& path, const Eigen::MatrixXd& surface){
   std::ofstream myfile;
   myfile.open (path);
@@ -304,7 +312,7 @@ void OdometryKeyframeFuser::AddToGraph(PoseScanVector& reference, RadarScan& sca
 void OdometryKeyframeFuser::AddGroundTruth(poseStampedVector& gt_vek){
   std::map<unsigned long,Pose3d> stamp_map;
   for (auto && gt : gt_vek ){ // construct map of ground truth poses
-    stamp_map[gt.second.toNSec()] = PoseEigToCeres(gt.first);
+    stamp_map[std::get<2>(gt).toNSec()] = PoseEigToCeres(std::get<0>(gt));
     //cout << "gt : " << gt.second.toNSec() << endl;
   }
 

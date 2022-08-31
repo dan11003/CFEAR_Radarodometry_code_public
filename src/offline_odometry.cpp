@@ -79,14 +79,14 @@ public:
       nav_msgs::Odometry::ConstPtr odom_msg = m.instantiate<nav_msgs::Odometry>();
       if (odom_msg != NULL){
         nav_msgs::Odometry msg_odom = *odom_msg;
-        poseStamped stamped_gt_pose = std::make_pair(Eigen::Affine3d::Identity(), odom_msg->header.stamp);
-        tf::poseMsgToEigen(msg_odom.pose.pose, stamped_gt_pose.first);
-        stamped_gt_pose.first = stamped_gt_pose.first;//transform into sensor frame
-        Eigen::Matrix4d m = stamped_gt_pose.first.matrix();
+        poseStamped stamped_gt_pose = std::make_tuple(Eigen::Affine3d::Identity(), Covariance::Identity(), odom_msg->header.stamp);
+        tf::poseMsgToEigen(msg_odom.pose.pose, std::get<0>(stamped_gt_pose));
+        std::get<0>(stamped_gt_pose) = std::get<0>(stamped_gt_pose);//transform into sensor frame
+        Eigen::Matrix4d m = std::get<0>(stamped_gt_pose).matrix();
         m(0,2) = 0; m(2,0) = 0; m(2,1) = 0; m(1,2) = 0; m(2,2) = 1; // 3d -> 2d
-        stamped_gt_pose.first = Eigen::Affine3d(m);
-        static Eigen::Affine3d Tfirst_i = stamped_gt_pose.first.inverse();
-        stamped_gt_pose.first = Tfirst_i*stamped_gt_pose.first;
+        std::get<0>(stamped_gt_pose) = Eigen::Affine3d(m);
+        static Eigen::Affine3d Tfirst_i = std::get<0>(stamped_gt_pose).inverse();
+        std::get<0>(stamped_gt_pose) = Tfirst_i*std::get<0>(stamped_gt_pose);
         eval.CallbackGTEigen(stamped_gt_pose);
 
         msg_odom.header.stamp = ros::Time::now();
@@ -103,8 +103,9 @@ public:
         driver.CallbackOffline(image_msg, cloud_filtered, cloud_filtered_peaks);
         CFEAR_Radarodometry::timing.Document("Filtered points",cloud_filtered->size());
         Eigen::Affine3d Tcurrent;
+        Covariance cov_current;
 
-        fuser.pointcloudCallback(cloud_filtered, cloud_filtered_peaks, Tcurrent, image_msg->header.stamp);
+        fuser.pointcloudCallback(cloud_filtered, cloud_filtered_peaks, Tcurrent, image_msg->header.stamp, cov_current);
         if(fuser.updated && p.save_radar_img){
           std::string path = eval_par.est_output_dir + "/" + std::to_string(image_msg->header.stamp.toNSec())+".png";
           cv::imwrite(path, driver.cv_polar_image->image);
@@ -113,7 +114,7 @@ public:
 
 
 
-        eval.CallbackESTEigen(std::make_pair(Tcurrent, image_msg->header.stamp));
+        eval.CallbackESTEigen(std::make_tuple(Tcurrent, cov_current, image_msg->header.stamp));
         ros::Time tnow = ros::Time::now();
         ros::Duration d = ros::Duration(tnow-tinit);
         static ros::Duration tot(0);
