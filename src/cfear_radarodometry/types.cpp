@@ -67,8 +67,8 @@ std::string MatToString(Eigen::MatrixXd& m){
   assert(m.rows()== 4 && m.cols()==4);
 
   ss<< m(0,0) <<" "<< m(0,1) <<" "<< m(0,2) <<" "<< m(0,3) <<" "<<
-             m(1,0) <<" "<< m(1,1) <<" "<< m(1,2) <<" "<< m(1,3) <<" "<<
-             m(2,0) <<" "<< m(2,1) <<" "<< m(2,2) <<" "<< m(2,3);
+       m(1,0) <<" "<< m(1,1) <<" "<< m(1,2) <<" "<< m(1,3) <<" "<<
+       m(2,0) <<" "<< m(2,1) <<" "<< m(2,2) <<" "<< m(2,3);
   return ss.str();
 }
 unsigned int RadarScan::counter = 0;
@@ -92,13 +92,13 @@ RadarScan::RadarScan(const Eigen::Affine3d& pose_scan):
 }
 const std::string RadarScan::ToString(){
 
-Eigen::MatrixXd m(T.GetPose().matrix());
-assert(m.rows()== 4 && m.cols()==4);
-std::stringstream ss;
-ss << std::fixed << std::showpoint;
+  Eigen::MatrixXd m(T.GetPose().matrix());
+  assert(m.rows()== 4 && m.cols()==4);
+  std::stringstream ss;
+  ss << std::fixed << std::showpoint;
 
-ss <<MatToString(m) << " " << std::to_string(stamp_) << std::endl;
-return ss.str();
+  ss <<MatToString(m) << " " << std::to_string(stamp_) << std::endl;
+  return ss.str();
 }
 void SaveSimpleGraph(const std::string& path, simple_graph &graph){
   try {
@@ -133,7 +133,7 @@ Constraint3d CreateAppearanceConstraint(const unsigned long ibegin, const unsign
   Constraint3d c;
   c.id_begin = ibegin; c.id_end = iend; c.type = loop_appearance;  c.quality[SC_SIM] = apperance_similarity;
   c.t_be = PoseEigToCeres(Tguess);
-  c.quality = {{ODOM_BOUNDS,-1.0},{SC_SIM,-1.0},{CFEAR_COST,-1.0},{CFEAR_RESIDUALS,-1.0}};
+  c.quality = {{ODOM_BOUNDS,-1.0},{SC_SIM,apperance_similarity},{CFEAR_COST,-1.0},{CFEAR_RESIDUALS,-1.0}};
   return c;
 }
 Constraint3d CreateMiniloopConstraint(const unsigned long ibegin, const unsigned long iend){
@@ -235,6 +235,15 @@ Eigen::Affine3d ConstraintsHandler::RelativeMotion( unsigned int id1, unsigned i
     return Eigen::Affine3d::Identity();
   }
 
+}
+double ConstraintsHandler::RelativeDistance( unsigned int id1, unsigned int id2,  const ConstraintType type ){
+  double distance = 0;
+  const unsigned int idx_min = std::min(id1,id2);
+  const unsigned int idx_max = std::max(id1,id2);
+  for(int i = idx_min ; i < idx_max ; i++ ){
+    distance += RelativeMotion(i,i+1).translation().norm();
+  }
+  return distance;
 }
 
 void RadarScanHandler::Add(const RadarScan& scan){

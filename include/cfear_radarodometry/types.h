@@ -153,8 +153,8 @@ typedef enum Constrainttype{odometry=0, loop_appearance, mini_loop, candidate} C
 std::string Constraint2String(const ConstraintType& c);
 #define ODOM_BOUNDS "odom-bounds"
 #define SC_SIM "sc-sim"
-#define CFEAR_COST ""
-#define CFEAR_RESIDUALS ""
+#define CFEAR_COST "CFEAR-cost"
+#define CFEAR_RESIDUALS "CFEAR-nr_res"
 
 struct Constraint3d {
 
@@ -242,6 +242,8 @@ public:
   double DistanceTraveled(){return dist_trav/(0.1+constraints_[odometry].size());}
 
   Eigen::Affine3d RelativeMotion( unsigned int id1, unsigned int id2,  const ConstraintType type = ConstraintType::odometry );
+
+  double RelativeDistance( unsigned int id1, unsigned int id2,  const ConstraintType type = ConstraintType::odometry );
 
   std::string ToString();
 
