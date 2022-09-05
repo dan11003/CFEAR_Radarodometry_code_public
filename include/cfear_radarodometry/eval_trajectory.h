@@ -53,7 +53,14 @@ using namespace sensor_msgs;
 //EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::matrix<double,4,4>)
 
 
-typedef std::tuple<Eigen::Affine3d, Covariance, ros::Time> poseStamped;
+//typedef std::tuple<Eigen::Affine3d, Covariance, ros::Time> poseStamped;
+struct poseStamped {
+    Eigen::Affine3d pose;
+    Covariance cov;
+    ros::Time t;
+    poseStamped(){};
+    poseStamped(const Eigen::Affine3d & _pose, const Covariance & _cov, const ros::Time & _t):pose(_pose),cov(_cov),t(_t){};
+};
 typedef std::vector<poseStamped, Eigen::aligned_allocator<poseStamped>> poseStampedVector;
 typedef sync_policies::ApproximateTime<nav_msgs::Odometry, nav_msgs::Odometry> double_odom;
 
@@ -149,6 +156,8 @@ private:
   void RemoveExtras();
 
   void Write(const std::string& path, const poseStampedVector& v);
+
+  void WriteTUM(const std::string& path, const poseStampedVector& v);
 
   void PrintStatus();
 

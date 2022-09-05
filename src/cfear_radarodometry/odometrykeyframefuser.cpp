@@ -312,7 +312,7 @@ void OdometryKeyframeFuser::AddToGraph(PoseScanVector& reference, RadarScan& sca
 void OdometryKeyframeFuser::AddGroundTruth(poseStampedVector& gt_vek){
   std::map<unsigned long,Pose3d> stamp_map;
   for (auto && gt : gt_vek ){ // construct map of ground truth poses
-    stamp_map[std::get<2>(gt).toNSec()] = PoseEigToCeres(std::get<0>(gt));
+    stamp_map[gt.t.toNSec()] = PoseEigToCeres(gt.pose);
     //cout << "gt : " << gt.second.toNSec() << endl;
   }
 

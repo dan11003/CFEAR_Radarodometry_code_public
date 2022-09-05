@@ -1,4 +1,5 @@
 ﻿#include "cfear_radarodometry/eval_trajectory.h"
+#include <unsupported/Eigen/MatrixFunctions>
 
 namespace CFEAR_Radarodometry {
 
@@ -31,11 +32,11 @@ void EvalTrajectory::CallbackSynchronized(const nav_msgs::Odometry::ConstPtr& ms
 
   cov = Eigen::Map<const Covariance>(msg_est->pose.covariance.data());       // the assignment makes a copy - safe
   tf::poseMsgToEigen(msg_est->pose.pose, T);
-  gt_vek.push_back(std::make_tuple(T, cov, msg_est->header.stamp));
+  gt_vek.push_back(poseStamped(T, cov, msg_est->header.stamp));
 
   cov = Eigen::Map<const Covariance>(msg_gt->pose.covariance.data());
   tf::poseMsgToEigen(msg_gt->pose.pose, T);
-  est_vek.push_back(std::make_tuple(T, cov, msg_gt->header.stamp));
+  est_vek.push_back(poseStamped(T, cov, msg_gt->header.stamp));
 }
 void EvalTrajectory::CallbackEigen(const poseStamped& Test, const poseStamped& Tgt){
   gt_vek.push_back(Tgt);
@@ -56,7 +57,7 @@ void EvalTrajectory::CallbackGT(const nav_msgs::Odometry::ConstPtr &msg){
   ros::Time t = msg->header.stamp;
   tf::poseMsgToEigen(msg->pose.pose, T);
   cov = Eigen::Map<const Covariance>(msg->pose.covariance.data());
-  gt_vek.push_back(std::make_tuple(T, cov, t));
+  gt_vek.push_back(poseStamped(T, cov, t));
 }
 
 
@@ -66,7 +67,7 @@ void EvalTrajectory::CallbackEst(const nav_msgs::Odometry::ConstPtr &msg){
   tf::poseMsgToEigen(msg->pose.pose, T);
   ros::Time t = msg->header.stamp;
   cov = Eigen::Map<const Covariance>(msg->pose.covariance.data());
-  est_vek.push_back(std::make_tuple(T, cov, t));
+  est_vek.push_back(poseStamped(T, cov, t));
 }
 
 std::string EvalTrajectory::DatasetToSequence(const std::string& dataset){
@@ -144,15 +145,15 @@ void EvalTrajectory::RemoveExtras(){
 
   while( !est_vek.empty() || !gt_vek.empty() ){
 
-    if( fabs( ros::Duration(std::get<2>(est_vek.front()) - std::get<2>(gt_vek.front())).toSec() ) > 0.0001  ){
-      if(std::get<2>(est_vek.front()) < std::get<2>(gt_vek.front())){
+    if( fabs( ros::Duration(est_vek.front().t - gt_vek.front().t).toSec() ) > 0.0001  ){
+      if(est_vek.front().t < gt_vek.front().t){
         est_vek.erase(est_vek.begin());
       }
       else
         gt_vek.erase(gt_vek.begin());
     }
-    else if( fabs( ros::Duration(std::get<2>(est_vek.back()) - std::get<2>(gt_vek.back())).toSec() ) > 0.0001  ){
-      if(std::get<2>(est_vek.back()) > std::get<2>(gt_vek.back())){
+    else if( fabs( ros::Duration(est_vek.back().t - gt_vek.back().t).toSec() ) > 0.0001  ){
+      if(est_vek.back().t > gt_vek.back().t){
         est_vek.pop_back();
       }
       else
@@ -170,23 +171,45 @@ void EvalTrajectory::Write(const std::string& path, const poseStampedVector& v){
   evalfile.open(path);
   for(size_t i=0;i<v.size();i++){
     // get the Affine3d matrix from the tuple
-    Eigen::MatrixXd m(std::get<0>(v[i]).matrix());
+    Eigen::MatrixXd m(v[i].pose.matrix());
     // print to the file
     evalfile << std::fixed << std::showpoint;
     assert(m.rows()== 4 && m.cols()==4);
-    evalfile << MatToString(m) << " ";
-
-    // get the covariance and print it
-    m = std::get<1>(v[i]);
-    assert(m.rows()== 6 && m.cols()==6);
-    evalfile << MatToString(m) << " ";
-
-    // print the timestamp as well
-    evalfile << std::get<2>(v[i]).sec << " " << std::get<2>(v[i]).nsec << std::endl;
+    evalfile << MatToString(m) << endl;
   }
   evalfile.close();
   return;
 }
+
+void EvalTrajectory::WriteTUM(const std::string& path, const poseStampedVector& v){
+    std::ofstream evalfile;
+    cout<<"Saving: "<<v.size()<<" poses to file: "<<path<<endl;
+    evalfile.open(path);
+
+    for(size_t i=0;i<v.size();i++){
+        // print the timestamp
+        evalfile << v[i].t.sec << "." << std::setfill('0') << std::setw(9) << v[i].t.nsec << " " << std::setw(0);
+
+        // get the Affine3d pose and quaternion
+        // print the pose to the file
+        evalfile << std::fixed << std::setprecision(4);
+        evalfile << v[i].pose.translation().x() << " " << v[i].pose.translation().y() << " " << v[i].pose.translation().z() << " ";
+        Eigen::Quaterniond quat(v[i].pose.rotation());  // print as a quaternion
+        evalfile << std::defaultfloat;
+        evalfile << quat.x() << " " << quat.y() << " " << quat.z() << " " << quat.w() << " ";
+
+        // get the covariance and print it inline
+        Eigen::IOFormat Inline_matrix_format(Eigen::StreamPrecision, Eigen::DontAlignCols, " ",
+                                      " ", "", "", "", "");
+        evalfile << v[i].cov.format(Inline_matrix_format) << " ";
+
+        evalfile << std::endl;
+    }
+    evalfile.close();
+    return;
+}
+
+
 void Plot(){
 
 }
@@ -197,7 +220,7 @@ void EvalTrajectory::PublishTrajectory(poseStampedVector& vek, ros::Publisher& p
 
   std::vector<tf::StampedTransform> trans_vek;
   for (int i=0;i<vek.size();i++) {
-    Eigen::Affine3d T = std::get<0>(vek[i]);
+    Eigen::Affine3d T = vek[i].pose;
     geometry_msgs::PoseStamped Tstamped;
     tf::poseEigenToMsg(T,Tstamped.pose);
     path.poses.push_back(Tstamped);
@@ -208,11 +231,11 @@ void EvalTrajectory::PrintStatus(){
   if(gt_vek.size()!=est_vek.size()){
     //    std::cerr<<"SIZE ERROR. est_vek.size()="<<est_vek.size()<<", gt_vek.size()="<<gt_vek.size() <<std::endl;
   }
-  cout<<"Est first: "<<std::get<0>(est_vek.front()).translation().transpose()<<" - time: "<<std::get<2>(est_vek.front())<<endl;
-  cout<<"GT: first: "<<std::get<0>(gt_vek.front()).translation().transpose()<<" - time: "<<std::get<2>(gt_vek.front())<<endl;
+  cout<<"Est first: "<<est_vek.front().pose.translation().transpose()<<" - time: "<<est_vek.front().t<<endl;
+  cout<<"GT: first: "<<gt_vek.front().pose.translation().transpose()<<" - time: "<<gt_vek.front().t<<endl;
 
-  cout<<"Est Last: "<<std::get<0>(est_vek.back()).translation().transpose()<<" - time: "<<std::get<2>(est_vek.back())<<endl;
-  cout<<"GT: Last: "<<std::get<0>(gt_vek.back()).translation().transpose()<<" - time: "<<std::get<2>(gt_vek.back())<<endl;
+  cout<<"Est Last: "<<est_vek.back().pose.translation().transpose()<<" - time: "<<est_vek.back().t<<endl;
+  cout<<"GT: Last: "<<gt_vek.back().pose.translation().transpose()<<" - time: "<<gt_vek.back().t<<endl;
   return;
 }
 
@@ -228,9 +251,12 @@ void EvalTrajectory::Save(){
   else if(gt_vek.empty()){
     cout<<"No ground truth? No problem! without gps the need of radar based localization is even larger"<<endl;
     boost::filesystem::create_directories(par.est_output_dir);
-    std::string est_path = par.est_output_dir+DatasetToSequence(par.sequence);     cout<<"Saving estimate poses only, no ground truth, total: "<<est_vek.size()<<" poses"<<endl;
+    std::string est_path = par.est_output_dir+DatasetToSequence(par.sequence);
+    std::string est_path_tum = par.est_output_dir+ "tum_" +DatasetToSequence(par.sequence);
+    cout<<"Saving estimate poses only, no ground truth, total: "<<est_vek.size()<<" poses"<<endl;
     cout<<"To path: "<<est_path<<endl;
     Write(est_path,  est_vek);
+    WriteTUM(est_path_tum, est_vek);
     cout<<"Trajectory saved"<<endl;
     return;
     
@@ -247,12 +273,16 @@ void EvalTrajectory::Save(){
   cout << "create: " << par.est_output_dir << std::endl;
   boost::filesystem::create_directories(par.est_output_dir);
   std::string gt_path  = par.gt_output_dir +DatasetToSequence(par.sequence);
+  std::string gt_path_tum  = par.gt_output_dir+ "tum_" +DatasetToSequence(par.sequence);
   std::string est_path = par.est_output_dir+DatasetToSequence(par.sequence);
+  std::string est_path_tum = par.est_output_dir + "tum_" + DatasetToSequence(par.sequence);
   cout<<"Saving est_vek.size()="<<est_vek.size()<<", gt_vek.size()="<<gt_vek.size()<<endl;
   cout<<"To path: \n\" "<<gt_path<<"\""<<"\n\""<<est_path<<"\""<<endl;
 
   Write(gt_path, gt_vek);
+  WriteTUM(gt_path_tum, gt_vek);
   Write(est_path,  est_vek);
+  WriteTUM(est_path_tum,  est_vek);
   cout<<"Trajectories saved"<<endl;
 
   return;
@@ -348,7 +378,7 @@ void EvalTrajectory::One2OneCorrespondance(){
   poseStampedVector::iterator init_guess = gt_vek.begin();
   for(size_t i=0 ; i<est_vek.size() ; i++){
     poseStamped interp_corr;
-    if(Interpolate(std::get<2>(est_vek[i]), interp_corr, init_guess)){
+    if(Interpolate(est_vek[i].t, interp_corr, init_guess)){
       revised_est.push_back(est_vek[i]);
       revised_gt.push_back(interp_corr);
     }
@@ -374,8 +404,8 @@ bool EvalTrajectory::SearchByTime(const ros::Time& t, poseStampedVector::iterato
   poseStampedVector::iterator last = std::prev(gt_vek.end());
 
   for(auto &&it = itr ; itr != last; it++){
-    double tprev = std::get<2>(*it).toSec();
-    double tnext = std::get<2>(*std::next(it)).toSec();
+    double tprev = it->t.toSec();
+    double tnext = std::next(it)->t.toSec();
     if(tprev <= tsearch && tsearch <= tnext ) {
       itr = it;
       //cout<<"min:"<<it->second<<" search: "<<t<<"max: "<<std::next(it)->second<<endl;
@@ -391,9 +421,12 @@ bool EvalTrajectory::Interpolate(const ros::Time& t, poseStamped& Tinterpolated,
     poseStamped Tbefore = *itr;
     poseStamped Tafter = *std::next(itr);
 
-      std::get<0>(Tinterpolated) = pose_interp(t.toSec(), std::get<2>(Tbefore).toSec(), std::get<2>(Tafter).toSec(),
-                                               std::get<0>(Tbefore), std::get<0>(Tafter));
-      std::get<2>(Tinterpolated) = t;
+      Tinterpolated.pose = pose_interp(t.toSec(), Tbefore.t.toSec(), Tafter.t.toSec(),
+                                               Tbefore.pose, Tafter.pose);
+      Tinterpolated.t = t;
+      //TODO: This should be a geometric mean instead to do the interpolation correctly: https://www.lyndonduong.com/psd-cone/
+      //However, we don't have GT's covariance anyway, so we would be computing all the stuff (3x matrix sqrt) for nothing
+      Tinterpolated.cov = Tbefore.cov;
     return true;
   }
   else return false;
