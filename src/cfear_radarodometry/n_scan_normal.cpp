@@ -182,8 +182,8 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
 bool n_scan_normal_reg::GetCost(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, double& score, std::vector<double>& residuals){
   size_t n_scans = scans.size();
   assert( Tsrc.size()==n_scans && n_scans >= 2);
-  fixedBlock_ = std::vector<bool>(n_scans,false);
-  fixedBlock_.back() = true;
+  fixedBlock_ = std::vector<bool>(n_scans,true);
+  fixedBlock_.back() = false;
 
   parameters.resize(n_scans,std::vector<double>());
   for(size_t i = 0 ; i<n_scans ; i++){
