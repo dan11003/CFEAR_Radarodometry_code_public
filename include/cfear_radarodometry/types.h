@@ -151,10 +151,6 @@ typedef enum Constrainttype{odometry=0, loop_appearance, mini_loop, candidate} C
 
 
 std::string Constraint2String(const ConstraintType& c);
-#define ODOM_BOUNDS "odom-bounds"
-#define SC_SIM "sc-sim"
-#define CFEAR_COST "CFEAR-cost"
-#define CFEAR_RESIDUALS "CFEAR-nr_res"
 
 struct Constraint3d {
 
@@ -188,11 +184,6 @@ struct Constraint3d {
     ar & information;
   }
 };
-Constraint3d CreateAppearanceConstraint(const unsigned long ibegin, const unsigned long iend, const double apperance_similarity, const Eigen::Affine3d& Tguess = Eigen::Affine3d::Identity());
-
-Constraint3d CreateMiniloopConstraint(const unsigned long ibegin, const unsigned long iend);
-
-Constraint3d CreateCandidateConstraint(const unsigned long ibegin, const unsigned long iend, const std::string& description = "");
 
 typedef std::vector< std::pair<RadarScan, std::vector<Constraint3d>> > simple_graph;
 
