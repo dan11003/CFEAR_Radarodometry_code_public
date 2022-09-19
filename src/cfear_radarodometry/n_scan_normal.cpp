@@ -182,8 +182,8 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
 bool n_scan_normal_reg::GetCost(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, double& score, std::vector<double>& residuals){
   size_t n_scans = scans.size();
   assert( Tsrc.size()==n_scans && n_scans >= 2);
-  fixedBlock_ = std::vector<bool>(n_scans,false);
-  fixedBlock_.back() = true;
+  fixedBlock_ = std::vector<bool>(n_scans,true);
+  fixedBlock_.back() = false;
 
   parameters.resize(n_scans,std::vector<double>());
   for(size_t i = 0 ; i<n_scans ; i++){
@@ -202,12 +202,8 @@ bool n_scan_normal_reg::GetCost(std::vector<MapNormalPtr>& scans, std::vector<Ei
   }
   ceres::Problem::EvaluateOptions opt;
   bool success = problem_->Evaluate(opt, &score, &residuals, nullptr, nullptr);
-
-  return summary_.IsSolutionUsable();
-
-  score_ = this->summary_.final_cost/this->summary_.num_residuals;
-
-
+  score_ = score/residuals.size();
+  return success;
 }
 
 void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr& src_local, const Eigen::Affine2d& Ttar, const Eigen::Affine2d& Tsrc, const size_t scan_idx_tar, const size_t scan_idx_src){
@@ -270,16 +266,11 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
     const Eigen::Vector2d tar_mean_world = Ttar*tar_mean;
     const Eigen::Vector2d src_mean_world = Tsrc*src_mean;
     const double weight_after_loss = weight_associations_[scan_pair][i].GetWeight(weight_opt_);
-
     //vis_residuals.push_back(std::make_tuple(src_mean_world,tar_mean_world,weight_after_loss,scan_idx_tar));
     //cout << "weight_after_loss: " << weight_after_loss <<", weight_opt_" <<weight_opt_<< endl;
     ceres::LossFunction* ceres_loss = new ceres::ScaledLoss(GetLoss(), weight_after_loss, ceres::TAKE_OWNERSHIP); // Important, loss should be applied after Mr. Huber
-
-
-
     ceres::CostFunction* cost_function = nullptr;
     if(cost_ == cost_metric::P2L){
-
       //const Eigen::Vector2d src_normal = src_local->GetNormal2d(ass_src_idx);
       //Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(ass_src_idx);// src.block<2,1>(0,src_idx);
       const Eigen::Vector2d tar_normal = target_local->GetNormal2d(ass_tar_idx);

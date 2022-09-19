@@ -69,7 +69,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}  ${PCL_
  )
 
 add_library(${PROJECT_NAME} ${${PROJECT_NAME}_LIB_SRCS})
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}  ${CERES_LIBRARIES} ${Boost_LIBRARIES} boost_serialization )
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}  ${CERES_LIBRARIES} ${Boost_LIBRARIES} boost_serialization)
 
 add_executable(eval_node src/eval_node.cpp)
 target_link_libraries(eval_node ${catkin_LIBRARIES}  ${Boost_LIBRARIES} ${PROJECT_NAME})
