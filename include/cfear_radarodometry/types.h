@@ -182,6 +182,10 @@ struct Constraint3d {
     ar & id_end;
     ar & t_be;
     ar & information;
+    ar & type;
+    ar & quality;
+    ar & info;
+
   }
 };
 
