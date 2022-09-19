@@ -159,6 +159,8 @@ private:
 
   void WriteTUM(const std::string& path, const poseStampedVector& v);
 
+  void WriteCov(const std::string& path, const poseStampedVector& v);
+
   void PrintStatus();
 
   poseStampedVector::iterator FindElement(const ros::Time& t);

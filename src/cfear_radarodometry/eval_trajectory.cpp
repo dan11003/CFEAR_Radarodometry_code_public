@@ -196,12 +196,33 @@ void EvalTrajectory::WriteTUM(const std::string& path, const poseStampedVector& 
         evalfile << v[i].pose.translation().x() << " " << v[i].pose.translation().y() << " " << v[i].pose.translation().z() << " ";
         Eigen::Quaterniond quat(v[i].pose.rotation());  // print as a quaternion
         evalfile << std::defaultfloat;
-        evalfile << quat.x() << " " << quat.y() << " " << quat.z() << " " << quat.w() << " ";
+        evalfile << quat.x() << " " << quat.y() << " " << quat.z() << " " << quat.w(); // << " ";
+
+        // get the covariance and print it inline
+        //Eigen::IOFormat Inline_matrix_format(Eigen::StreamPrecision, Eigen::DontAlignCols, " ",
+        //                              " ", "", "", "", "");
+        //evalfile << v[i].cov.format(Inline_matrix_format) << " ";
+
+        evalfile << std::endl;
+    }
+    evalfile.close();
+    return;
+}
+
+
+void EvalTrajectory::WriteCov(const std::string& path, const poseStampedVector& v){
+    std::ofstream evalfile;
+    cout<<"Saving: "<<v.size()<<" covariances to file: "<<path<<endl;
+    evalfile.open(path);
+
+    for(size_t i=0;i<v.size();i++){
+        // print the timestamp
+        evalfile << v[i].t.sec << "." << std::setfill('0') << std::setw(9) << v[i].t.nsec << " " << std::setw(0);
 
         // get the covariance and print it inline
         Eigen::IOFormat Inline_matrix_format(Eigen::StreamPrecision, Eigen::DontAlignCols, " ",
                                       " ", "", "", "", "");
-        evalfile << v[i].cov.format(Inline_matrix_format) << " ";
+        evalfile << v[i].cov.format(Inline_matrix_format);
 
         evalfile << std::endl;
     }
@@ -253,10 +274,12 @@ void EvalTrajectory::Save(){
     boost::filesystem::create_directories(par.est_output_dir);
     std::string est_path = par.est_output_dir+DatasetToSequence(par.sequence);
     std::string est_path_tum = par.est_output_dir+ "tum_" +DatasetToSequence(par.sequence);
+    std::string est_path_cov = par.est_output_dir+ "cov_" +DatasetToSequence(par.sequence);
     cout<<"Saving estimate poses only, no ground truth, total: "<<est_vek.size()<<" poses"<<endl;
     cout<<"To path: "<<est_path<<endl;
     Write(est_path,  est_vek);
     WriteTUM(est_path_tum, est_vek);
+    WriteCov(est_path_cov, est_vek);
     cout<<"Trajectory saved"<<endl;
     return;
     
@@ -276,6 +299,7 @@ void EvalTrajectory::Save(){
   std::string gt_path_tum  = par.gt_output_dir+ "tum_" +DatasetToSequence(par.sequence);
   std::string est_path = par.est_output_dir+DatasetToSequence(par.sequence);
   std::string est_path_tum = par.est_output_dir + "tum_" + DatasetToSequence(par.sequence);
+  std::string est_path_cov = par.est_output_dir + "cov_" + DatasetToSequence(par.sequence);
   cout<<"Saving est_vek.size()="<<est_vek.size()<<", gt_vek.size()="<<gt_vek.size()<<endl;
   cout<<"To path: \n\" "<<gt_path<<"\""<<"\n\""<<est_path<<"\""<<endl;
 
@@ -283,6 +307,7 @@ void EvalTrajectory::Save(){
   WriteTUM(gt_path_tum, gt_vek);
   Write(est_path,  est_vek);
   WriteTUM(est_path_tum,  est_vek);
+  WriteCov(est_path_cov,  est_vek);
   cout<<"Trajectories saved"<<endl;
 
   return;
