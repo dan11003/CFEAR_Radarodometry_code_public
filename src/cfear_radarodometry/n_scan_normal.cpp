@@ -202,7 +202,7 @@ bool n_scan_normal_reg::GetCost(std::vector<MapNormalPtr>& scans, std::vector<Ei
   }
   ceres::Problem::EvaluateOptions opt;
   bool success = problem_->Evaluate(opt, &score, &residuals, nullptr, nullptr);
-  score_ = score/residuals.size();
+  score_ = score/( std::max((int)residuals.size(),1) );
   return success;
 }
 
