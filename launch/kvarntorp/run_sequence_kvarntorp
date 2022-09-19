@@ -6,7 +6,7 @@ SEQUENCE="2020-09-18-14-38-03"
 current_date=`date '+%Y-%m-%d_%H:%M'`
 EVALUATION_description="cfear-x"
 
-BAG_BASE_PATH="/${BAG_LOCATION}/kvarntorp" #Change this to the directory where you have the bag files
+BAG_BASE_PATH="${BAG_LOCATION}/kvarntorp" #Change this to the directory where you have the bag files
 BAG_FILE_PATH="${BAG_BASE_PATH}/${SEQUENCE}.bag"
 echo "${BAG_FILE_PATH}"
 EVAL_BASE_DIR="${BAG_BASE_PATH}/eval/${current_date}"
