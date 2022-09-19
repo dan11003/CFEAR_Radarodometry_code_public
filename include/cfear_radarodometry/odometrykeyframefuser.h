@@ -181,6 +181,7 @@ public:
 protected:
   Eigen::Affine3d Tprev_fused, T_prev, Tmot;
   Eigen::Affine3d Tcurrent;
+  Covariance cov_current;
 
   // Components mat publishing
   boost::shared_ptr<n_scan_normal_reg> radar_reg = NULL;
@@ -207,6 +208,8 @@ public:
   //~OdometryKeyframeFuser();
 
   void pointcloudCallback(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered,  pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered_peaks,  Eigen::Affine3d &Tcurr, const ros::Time& t);
+
+  void pointcloudCallback(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered,  pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered_peaks,  Eigen::Affine3d &Tcurr, const ros::Time& t, Covariance &cov_curr);
 
   std::string GetStatus(){return "Distance traveled: "+std::to_string(distance_traveled)+", nr sensor readings: "+std::to_string(frame_nr_);}
 
