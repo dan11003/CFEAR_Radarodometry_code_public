@@ -13,6 +13,11 @@ n_scan_normal_reg::n_scan_normal_reg(){
   //this->options_.trust_region_strategy_type = ceres::TrustRegionStrategyType::LEVENBERG_MARQUARDT;
 
 }
+void n_scan_normal_reg::SetParameters(unsigned int max_itr_association, unsigned int max_itr_solver){
+  this->max_itr_association_ = max_itr_association;
+  this->options_.max_num_iterations = max_itr_solver;
+
+}
 
 n_scan_normal_reg::n_scan_normal_reg(const cost_metric &cost,loss_type loss, double loss_limit, const weightoption opt) : n_scan_normal_reg()
 {
@@ -94,7 +99,7 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
 
   std::vector<double> prev_par = parameters.back();
   double prev_score = DBL_MAX;
-  for(itr_ = 1 ; itr_<=8 && success; itr_++){
+  for(itr_ = 1 ; itr_<= max_itr_association_ && success; itr_++){
     scan_associations_.clear();
     weight_associations_.clear();
     success = BuildOptimizationProblem(scans, reg_cov.back(), guess, soft_constraints);
@@ -125,7 +130,7 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
       break;
     }*/
 
-    if( itr_ > min_itr){
+    if( itr_ > min_itr_){
       if(prev_score < current_score) // potential problem, recover to prev iteration
       {
         //CFEAR_Radarodometry::timing.Document("prev-better", 1);
