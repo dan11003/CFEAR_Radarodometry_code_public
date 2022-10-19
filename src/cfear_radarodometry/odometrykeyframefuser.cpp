@@ -17,7 +17,7 @@ visualization_msgs::Marker GetDefault(){
   return m;
 }
 
-OdometryKeyframeFuser::OdometryKeyframeFuser(const Parameters& pars, bool disable_callback) : par(pars), nh_("~"){
+OdometryKeyframeFuser::OdometryKeyframeFuser(const Parameters& pars, bool disable_callback) : par(pars), nh_("~"), generator(std::default_random_engine()){
   assert (!par.input_points_topic.empty() && !par.scan_registered_latest_topic.empty() && !par.scan_registered_keyframe_topic.empty() && !par.odom_latest_topic.empty() && !par.odom_keyframe_topic.empty() );
   assert(par.res>0.05 && par.submap_scan_size>=1 );
   //radar_reg =
@@ -152,6 +152,20 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   std::vector<CFEAR_Radarodometry::MapNormalPtr> scans_vek;
   std::vector<Eigen::Affine3d> T_vek;
   ros::Time t1 = ros::Time::now();
+
+  // VK TESTING: Incrementally add noise to the cloud and observe how it deteriorates the odometry
+//  double noise_sigma_max = 10.0;
+//  double noise_mean = 0.0;
+//  double noise_sigma = (3.0 / 8600.0) * double(frame_nr_) + 0.0000000001;
+//  std::normal_distribution<double> distribution(noise_mean,noise_sigma);
+//
+//  for(auto && p : cloud->points){
+//    p.x += distribution(generator);
+//    p.y += distribution(generator);
+//  }
+
+  // VK TESTING END
+
   CFEAR_Radarodometry::MapNormalPtr Pcurrent = CFEAR_Radarodometry::MapNormalPtr(new MapPointNormal(cloud, par.res, Eigen::Vector2d(0,0), par.weight_intensity_, par.use_raw_pointcloud));
 
 
@@ -162,7 +176,19 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   else
     Tguess = T_prev;
 
-  if(keyframes_.empty()){
+  // VK Testing Tguess noise
+//  Eigen::Affine3d noise_T = Eigen::Affine3d::Identity();
+//  //noise_T.translation() = Eigen::Vector3d(distribution(generator),distribution(generator),0.0);
+//  //Eigen::AngleAxisd rot(distribution(generator)*0.1, Eigen::Vector3d(0.0,0.0,1.0));
+//  Eigen::AngleAxisd rot(noise_sigma*0.1, Eigen::Vector3d(0.0,0.0,1.0));
+//  noise_T.linear() = rot.toRotationMatrix();
+//
+//
+//  Tguess = Tguess * noise_T;
+//  std::cout << noise_T.matrix() << std::endl;
+  // VK Testing Tguess end
+
+    if(keyframes_.empty()){
     scan_ = RadarScan(Eigen::Affine3d::Identity(), Eigen::Affine3d::Identity(), cloud_peaks, cloud, Pcurrent, t);
     AddToGraph(keyframes_, scan_, Eigen::Matrix<double,6,6>::Identity());
     updated = true;
@@ -192,6 +218,57 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   if(!AccelerationVelocitySanityCheck(Tmot, Tmot_current))
     Tcurrent = Tguess; //Insane acceleration and speed, lets use the guess.
   Tmot = T_prev.inverse()*Tcurrent;
+
+  // VK: Cost sampling around the best solution
+  //std::vector<uint> interesting_samples {215, 218, 263, 270, 1913, 1918};
+  //if(std::find(interesting_samples.begin(), interesting_samples.end(), nr_callbacks_) != interesting_samples.end()) {
+  if(nr_callbacks_ >= 100 && nr_callbacks_ <= 500) {
+      string path = string("/tmp/cfear_out/cov_samples_") + std::to_string(nr_callbacks_) + string(".csv");
+      std::ofstream cov_samples_file(path);
+
+      double sample_cost = 0;
+      std::vector<double> residuals;
+      double xy_sample_range = 0.2; // sampling in all directions
+      double theta_range = 0.01745;  // plus minus
+      int number_of_steps = 11;
+      Eigen::Affine3d sample_T = Eigen::Affine3d::Identity();
+
+      std::vector<double> xy_samples = linspace<double>(-xy_sample_range, xy_sample_range, number_of_steps);
+      std::vector<double> theta_samples = linspace<double>(-theta_range, theta_range, number_of_steps);
+      //std::cout << "SAMPLING COST Function ###################################################" << std::endl;
+      for (int theta_sample_id = 0; theta_sample_id < number_of_steps; theta_sample_id++) {
+          //std::cout << "Theta offset: " << theta_samples[theta_sample_id] << " #################" << std::endl;
+          //for (int y_sample_id = 0; y_sample_id < number_of_steps; y_sample_id++) {
+          //    std::cout << xy_samples[y_sample_id] << " ";
+          //}
+          //std::cout << std::endl;
+          for (int x_sample_id = 0; x_sample_id < number_of_steps; x_sample_id++) {
+              for (int y_sample_id = 0; y_sample_id < number_of_steps; y_sample_id++) {
+
+                  sample_T.translation() = Eigen::Vector3d(xy_samples[x_sample_id],
+                                                           xy_samples[y_sample_id],
+                                                           0.0) + Tcurrent.translation();
+                  sample_T.linear() = Eigen::AngleAxisd(theta_samples[theta_sample_id],
+                                                        Eigen::Vector3d(0.0, 0.0, 1.0)) * Tcurrent.linear();
+
+                  T_vek.back() = sample_T;
+                  radar_reg->GetCost(scans_vek, T_vek, sample_cost, residuals);
+
+          //        std::cout << sample_cost << " ";
+                  cov_samples_file << xy_samples[x_sample_id] << " " << xy_samples[y_sample_id] <<
+                                      " " << theta_samples[theta_sample_id] << " " << sample_cost << std::endl;
+
+              }
+          //    std::cout << "  || " << xy_samples[x_sample_id] << std::endl;
+          }
+      }
+      //std::cout << "########################################################################" << std::endl;
+      cov_samples_file.close();
+  }
+
+
+
+
 
 
   MapPointNormal::PublishMap("/current_normals", Pcurrent, Tcurrent, par.odometry_link_id,-1,0.5);
@@ -359,5 +436,34 @@ void FormatScans(const PoseScanVector& reference,
   T_vek.push_back(Tcurrent);
 }
 
+
+
+template<typename T>
+std::vector<double> linspace(T start_in, T end_in, int num_in)
+{
+
+    std::vector<double> linspaced;
+
+    double start = static_cast<double>(start_in);
+    double end = static_cast<double>(end_in);
+    double num = static_cast<double>(num_in);
+
+    if (num == 0) { return linspaced; }
+    if (num == 1)
+    {
+        linspaced.push_back(start);
+        return linspaced;
+    }
+
+    double delta = (end - start) / (num - 1);
+
+    for(int i=0; i < num-1; ++i)
+    {
+        linspaced.push_back(start + delta * i);
+    }
+    linspaced.push_back(end); // I want to ensure that start and end
+    // are exactly the same as the input
+    return linspaced;
+}
 
 }

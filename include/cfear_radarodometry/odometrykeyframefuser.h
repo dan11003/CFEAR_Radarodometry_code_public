@@ -27,6 +27,10 @@
 #include <time.h>
 #include <cstdio>
 
+//VK: random for playing with the perturbation
+#include <random>
+#include <algorithm>
+
 #include <pcl_ros/transforms.h>
 #include "pcl_ros/publisher.h"
 
@@ -51,6 +55,7 @@ using std::string;
 using std::cout;
 using std::cerr;
 using std::endl;
+
 
 
 
@@ -199,6 +204,9 @@ protected:
   ros::Publisher pose_current_publisher, pose_keyframe_publisher, pubsrc_cloud_latest, pub_cloud_keyframe;;
   tf::TransformBroadcaster Tbr;
 
+  //VK: Tools for perturbing the odometry
+  std::default_random_engine generator;
+
 
 
 public:
@@ -255,4 +263,8 @@ void FormatScans(const PoseScanVector& reference,
                  std::vector<Eigen::Affine3d>& T_vek
                  );
 
+template<typename T> std::vector<double> linspace(T start_in, T end_in, int num_in);
+
 }
+
+
