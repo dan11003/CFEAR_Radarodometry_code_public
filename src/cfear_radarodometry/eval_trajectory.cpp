@@ -357,8 +357,8 @@ Eigen::Affine3d best_fit_transform(const Eigen::MatrixXd &A, const Eigen::Matrix
     centroid_A += A.block<1,3>(i,0).transpose();
     centroid_B += B.block<1,3>(i,0).transpose();
   }
-  centroid_A /= row;
-  centroid_B /= row;
+  centroid_A /= std::max(row, 1);
+  centroid_B /= std::max(row, 1);
   for(int i=0; i<row; i++){
     AA.block<1,3>(i,0) = A.block<1,3>(i,0) - centroid_A.transpose();
     BB.block<1,3>(i,0) = B.block<1,3>(i,0) - centroid_B.transpose();
