@@ -27,7 +27,7 @@ cd /home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxfor
 ## Running
 The odometry can be launched in two modes.
 * Offline: (used in this guide) runs at the maximum possible rate.
-* Online: Standard rostopic interface. radar_driver_node and odometry_keyframes. The radar_driver_node subscribes to "/Navtech/Polar" 
+* Online (not tested): Standard rostopic interface. radar_driver_node and odometry_keyframes. The radar_driver_node subscribes to "/Navtech/Polar" 
 
 ```
 roscd cfear_radarodometry/launch
