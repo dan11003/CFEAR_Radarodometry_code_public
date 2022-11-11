@@ -55,7 +55,7 @@ export radar_ccw="false" #False for oxford, otherwise true
 export soft_constraint="false"
 export disable_compensate="false"
 export dataset="oxford"
-export LOSS_TYPE="Huber"
+export LOSS_TYPE="Huber" #"Huber" "Cauchy" 
 export LOSS_LIMIT="0.1"
 
 

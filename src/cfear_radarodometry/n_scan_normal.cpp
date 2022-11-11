@@ -426,6 +426,15 @@ bool n_scan_normal_reg::GetCovariance(Matrix6d &Cov){
     return true;
   }
 }
+
+bool n_scan_normal_reg::GetCovarianceScaler(double &cov_scale){
+    //Cov should be scaled by num. of residuals and score (Andrea Censi 2007, (3))
+    if(summary_.num_residuals_reduced-summary_.num_parameters_reduced==0) return false;
+
+    cov_scale = summary_.final_cost/(summary_.num_residuals_reduced-summary_.num_parameters_reduced);
+    return true;
+}
+
 bool n_scan_normal_reg::SolveOptimizationProblem(){
 
   CHECK(problem_ != nullptr);

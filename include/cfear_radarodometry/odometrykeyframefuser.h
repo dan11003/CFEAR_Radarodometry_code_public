@@ -104,8 +104,19 @@ public:
     double covar_scale_ = 1.0;
     double regularization_ = 0.0;
 
+    bool estimate_cov_by_sampling = true;
+    bool cov_samples_to_file_as_well = false; // Will save in the desired folder
+    std::string cov_sampling_file_directory = "/tmp/cfear_out";
+    double cov_sampling_xy_range = 0.4;  // Will sample from -0.2 to +0.2
+    double cov_sampling_yaw_range = 0.0043625; //Will sample from -half to +half of this range as well
+    unsigned int cov_sampling_samples_per_axis = 5; //Will do 5^3 in the end
+    double cov_sampling_covariance_scaler = 1.0;
+
+
     bool publish_tf_ = true;
     bool store_graph = false;
+
+
 
     void GetParametersFromRos( ros::NodeHandle& param_nh){
       param_nh.param<std::string>("input_points_topic", input_points_topic, "/Navtech/Filtered");
