@@ -329,7 +329,9 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
                   cov_sampled.block<2, 2>(0, 0) = covariance_3x3.block<2, 2>(0, 0);
                   cov_sampled(5, 5) = covariance_3x3(2, 2);
                   cov_sampled(0, 5) = covariance_3x3(0, 2);
+                  cov_sampled(1, 5) = covariance_3x3(1, 2);
                   cov_sampled(5, 0) = covariance_3x3(2, 0);
+                  cov_sampled(5, 1) = covariance_3x3(2, 1);
               }
               else cov_sampled_success = false;
           }
@@ -338,11 +340,11 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
 
   }
 
-  //VK: Here the Cov. estimation ends
   if(par.estimate_cov_by_sampling && cov_sampled_success){
       cov_current = cov_sampled;
       cov_vek.back() = cov_sampled;
   }
+  //VK: Here the Cov. estimation ends
 
 
   MapPointNormal::PublishMap("/current_normals", Pcurrent, Tcurrent, par.odometry_link_id,-1,0.5);

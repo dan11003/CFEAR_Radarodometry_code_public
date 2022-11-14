@@ -109,8 +109,8 @@ public:
     std::string cov_sampling_file_directory = "/tmp/cfear_out";
     double cov_sampling_xy_range = 0.4;  // Will sample from -0.2 to +0.2
     double cov_sampling_yaw_range = 0.0043625; //Will sample from -half to +half of this range as well
-    unsigned int cov_sampling_samples_per_axis = 5; //Will do 5^3 in the end
-    double cov_sampling_covariance_scaler = 1.0;
+    unsigned int cov_sampling_samples_per_axis = 3; //Will do 5^3 in the end
+    double cov_sampling_covariance_scaler = 4.0;
 
 
     bool publish_tf_ = true;
@@ -186,6 +186,13 @@ public:
       stringStream << "publish_tf, "<<std::boolalpha<<publish_tf_<<endl;
       stringStream << "store graph, "<<store_graph<<endl;
       stringStream << "Weight, "<<weight_opt<<endl;
+      stringStream << "Use cost sampling for covariance, "<<std::boolalpha<<estimate_cov_by_sampling<<endl;
+      stringStream << "Save cost samples to a file, "<<std::boolalpha<<cov_samples_to_file_as_well<<endl;
+      stringStream << "Cost-samples-file folder, "<<cov_sampling_file_directory<<endl;
+      stringStream << "XY sampling range, "<<cov_sampling_xy_range<<endl;
+      stringStream << "Yaw sampling range, "<<cov_sampling_yaw_range<<endl;
+      stringStream << "Cost samples per axis, "<<cov_sampling_samples_per_axis<<endl;
+      stringStream << "Sampled covariance scale, "<<cov_sampling_covariance_scaler<<endl;
       return stringStream.str();
     }
   };
