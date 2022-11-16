@@ -104,7 +104,7 @@ public:
     double covar_scale_ = 1.0;
     double regularization_ = 0.0;
 
-    bool estimate_cov_by_sampling = true;
+    bool estimate_cov_by_sampling = false;
     bool cov_samples_to_file_as_well = false; // Will save in the desired folder
     std::string cov_sampling_file_directory = "/tmp/cfear_out";
     double cov_sampling_xy_range = 0.4;  // Will sample from -0.2 to +0.2
@@ -264,6 +264,8 @@ private:
   void processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_peaks, const ros::Time& t);
 
   void pointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_filtered);
+
+  bool approximateCovarianceBySampling(std::vector<CFEAR_Radarodometry::MapNormalPtr> &scans_vek, const std::vector<Eigen::Affine3d> &T_vek, Covariance &cov_sampled);
 
 
 

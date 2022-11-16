@@ -170,7 +170,7 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("loss_type", po::value<std::string>()->default_value("Huber"), "robust loss function eg. Huber Caunchy, None")
         ("loss_limit", po::value<double>()->default_value(0.1), "loss limit")
         ("covar_scale", po::value<double>()->default_value(1), "covar scale")// Please fix combined parameter
-        ("covar_sampling", po::value<bool>()->default_value(true), "Covar. by cost sampling")
+        ("covar_sampling", po::value<bool>()->default_value(false), "Covar. by cost sampling")
         ("covar_sample_save", po::value<bool>()->default_value(false), "Dump cost samples to a file")
         ("covar_sample_dir", po::value<std::string>()->default_value("/tmp/cfear_out"), "Where to save the cost samples")
         ("covar_XY_sample_range", po::value<double>()->default_value(0.4), "Sampling range on the x and y axes")
