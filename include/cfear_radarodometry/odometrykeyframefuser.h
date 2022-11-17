@@ -27,9 +27,6 @@
 #include <time.h>
 #include <cstdio>
 
-//VK: random for playing with the perturbation
-#include <random>
-#include <algorithm>
 
 #include <pcl_ros/transforms.h>
 #include "pcl_ros/publisher.h"
@@ -221,9 +218,6 @@ protected:
   ros::Subscriber pointcloud_callback;
   ros::Publisher pose_current_publisher, pose_keyframe_publisher, pubsrc_cloud_latest, pub_cloud_keyframe;;
   tf::TransformBroadcaster Tbr;
-
-  //VK: Tools for perturbing the odometry
-  std::default_random_engine generator;
 
 
 

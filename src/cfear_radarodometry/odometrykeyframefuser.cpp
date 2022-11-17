@@ -20,7 +20,7 @@ visualization_msgs::Marker GetDefault(){
   return m;
 }
 
-OdometryKeyframeFuser::OdometryKeyframeFuser(const Parameters& pars, bool disable_callback) : par(pars), nh_("~"), generator(std::default_random_engine()){
+OdometryKeyframeFuser::OdometryKeyframeFuser(const Parameters& pars, bool disable_callback) : par(pars), nh_("~") {
   assert (!par.input_points_topic.empty() && !par.scan_registered_latest_topic.empty() && !par.scan_registered_keyframe_topic.empty() && !par.odom_latest_topic.empty() && !par.odom_keyframe_topic.empty() );
   assert(par.res>0.05 && par.submap_scan_size>=1 );
   //radar_reg =
