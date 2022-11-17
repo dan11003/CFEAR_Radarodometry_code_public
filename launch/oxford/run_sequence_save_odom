@@ -2,8 +2,7 @@
 
 killall rviz
 
-#SEQUENCE="2019-01-10-12-32-52-radar-oxford-10k"
-SEQUENCE="2019-01-17-13-26-39-radar-oxford-10k"
+SEQUENCE="2019-01-10-12-32-52-radar-oxford-10k"
 current_date=`date '+%Y-%m-%d_%H:%M'`
 EVALUATION_description="cfear-x"
 
