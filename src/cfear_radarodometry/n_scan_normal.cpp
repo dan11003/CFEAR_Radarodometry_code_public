@@ -417,8 +417,8 @@ bool n_scan_normal_reg::GetCovariance(Matrix6d &Cov){
     if(summary_.num_residuals_reduced-summary_.num_parameters_reduced==0) return false;
     Eigen::MatrixXd cmat = 30*(summary_.final_cost/(summary_.num_residuals_reduced-summary_.num_parameters_reduced))
             * Eigen::Map<Eigen::Matrix<double,3,3>>(covariance_xx);
-    cout << "Covariance scaling: " << 30.0*(summary_.final_cost/(summary_.num_residuals_reduced-summary_.num_parameters_reduced))
-         << endl;
+    //  cout << "Covariance scaling: " << 30.0*(summary_.final_cost/(summary_.num_residuals_reduced-summary_.num_parameters_reduced))
+    //       << endl;
 
     // The original way by Daniel:
     // Eigen::MatrixXd cmat =  2.0 * Eigen::Map<Eigen::Matrix<double,3,3> >(covariance_xx); // Magic constat based on data
