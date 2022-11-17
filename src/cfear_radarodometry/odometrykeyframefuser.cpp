@@ -259,124 +259,122 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
 bool OdometryKeyframeFuser::approximateCovarianceBySampling(std::vector<CFEAR_Radarodometry::MapNormalPtr> &scans_vek,
                                                             const std::vector<Eigen::Affine3d> &T_vek,
                                                             Covariance &cov_sampled){
-    bool cov_sampled_success = true;
-    string path;   // for dumping samples to a file
-    std::ofstream cov_samples_file;
+  bool cov_sampled_success = true;
+  string path;   // for dumping samples to a file
+  std::ofstream cov_samples_file;
 
-    std::vector<Eigen::Affine3d> T_vek_copy(T_vek);
-    Eigen::Affine3d T_best_guess = T_vek_copy.back();
+  std::vector<Eigen::Affine3d> T_vek_copy(T_vek);
+  Eigen::Affine3d T_best_guess = T_vek_copy.back();
 
-    if(par.cov_samples_to_file_as_well){
-        path = par.cov_sampling_file_directory + string("/cov_samples_") + std::to_string(nr_callbacks_) + string(".csv");
-        cov_samples_file.open(path);
-    }
+  if(par.cov_samples_to_file_as_well){
+    path = par.cov_sampling_file_directory + string("/cov_samples_") + std::to_string(nr_callbacks_) + string(".csv");
+    cov_samples_file.open(path);
+  }
 
-    double xy_sample_range = par.cov_sampling_xy_range*0.5; // sampling in x and y axis around the estimated pose
-    double theta_range = par.cov_sampling_yaw_range*0.5;  // sampling on the yaw axis plus minus
-    unsigned int number_of_steps_per_axis = par.cov_sampling_samples_per_axis;
-    unsigned int number_of_samples = number_of_steps_per_axis*number_of_steps_per_axis*number_of_steps_per_axis;
+  double xy_sample_range = par.cov_sampling_xy_range*0.5; // sampling in x and y axis around the estimated pose
+  double theta_range = par.cov_sampling_yaw_range*0.5;  // sampling on the yaw axis plus minus
+  unsigned int number_of_steps_per_axis = par.cov_sampling_samples_per_axis;
+  unsigned int number_of_samples = number_of_steps_per_axis*number_of_steps_per_axis*number_of_steps_per_axis;
 
-    Eigen::Affine3d sample_T = Eigen::Affine3d::Identity();
-    double sample_cost = 0;  // return of the getCost function
-    std::vector<double> residuals; // return of the getCost function
-    Eigen::VectorXd samples_x_values(number_of_samples);
-    Eigen::VectorXd samples_y_values(number_of_samples);
-    Eigen::VectorXd samples_yaw_values(number_of_samples);
-    Eigen::VectorXd samples_cost_values(number_of_samples);
+  Eigen::Affine3d sample_T = Eigen::Affine3d::Identity();
+  double sample_cost = 0;  // return of the getCost function
+  std::vector<double> residuals; // return of the getCost function
+  Eigen::VectorXd samples_x_values(number_of_samples);
+  Eigen::VectorXd samples_y_values(number_of_samples);
+  Eigen::VectorXd samples_yaw_values(number_of_samples);
+  Eigen::VectorXd samples_cost_values(number_of_samples);
 
-    std::vector<double> xy_samples = linspace<double>(-xy_sample_range, xy_sample_range, number_of_steps_per_axis);
-    std::vector<double> theta_samples = linspace<double>(-theta_range, theta_range, number_of_steps_per_axis);
+  std::vector<double> xy_samples = linspace<double>(-xy_sample_range, xy_sample_range, number_of_steps_per_axis);
+  std::vector<double> theta_samples = linspace<double>(-theta_range, theta_range, number_of_steps_per_axis);
 
-    // Sample the cost function according to the settings, optionally dump the samples into a file
-    int vector_pointer = 0;
-    for (int theta_sample_id = 0; theta_sample_id < number_of_steps_per_axis; theta_sample_id++) {
-        for (int x_sample_id = 0; x_sample_id < number_of_steps_per_axis; x_sample_id++) {
-            for (int y_sample_id = 0; y_sample_id < number_of_steps_per_axis; y_sample_id++) {
+  // Sample the cost function according to the settings, optionally dump the samples into a file
+  int vector_pointer = 0;
+  for (int theta_sample_id = 0; theta_sample_id < number_of_steps_per_axis; theta_sample_id++) {
+    for (int x_sample_id = 0; x_sample_id < number_of_steps_per_axis; x_sample_id++) {
+      for (int y_sample_id = 0; y_sample_id < number_of_steps_per_axis; y_sample_id++) {
 
-                sample_T.translation() = Eigen::Vector3d(xy_samples[x_sample_id],
-                                                         xy_samples[y_sample_id],
-                                                         0.0) + T_best_guess.translation();
-                sample_T.linear() = Eigen::AngleAxisd(theta_samples[theta_sample_id],
-                                                      Eigen::Vector3d(0.0, 0.0, 1.0)) * T_best_guess.linear();
+        sample_T.translation() = Eigen::Vector3d(xy_samples[x_sample_id],
+                                                 xy_samples[y_sample_id],
+                                                 0.0) + T_best_guess.translation();
+        sample_T.linear() = Eigen::AngleAxisd(theta_samples[theta_sample_id],
+                                              Eigen::Vector3d(0.0, 0.0, 1.0)) * T_best_guess.linear();
 
-                T_vek_copy.back() = sample_T;
-                radar_reg->GetCost(scans_vek, T_vek_copy, sample_cost, residuals);
+        T_vek_copy.back() = sample_T;
+        radar_reg->GetCost(scans_vek, T_vek_copy, sample_cost, residuals);
 
-                samples_x_values[vector_pointer] = xy_samples[x_sample_id];
-                samples_y_values[vector_pointer] = xy_samples[y_sample_id];
-                samples_yaw_values[vector_pointer] = theta_samples[theta_sample_id];
-                samples_cost_values[vector_pointer] = sample_cost;
-                vector_pointer ++;
+        samples_x_values[vector_pointer] = xy_samples[x_sample_id];
+        samples_y_values[vector_pointer] = xy_samples[y_sample_id];
+        samples_yaw_values[vector_pointer] = theta_samples[theta_sample_id];
+        samples_cost_values[vector_pointer] = sample_cost;
+        vector_pointer ++;
 
-                if(par.cov_samples_to_file_as_well) {
-                    cov_samples_file << xy_samples[x_sample_id] << " " << xy_samples[y_sample_id] <<
-                                     " " << theta_samples[theta_sample_id] << " " << sample_cost << std::endl;
-                }
-            }
+        if(par.cov_samples_to_file_as_well) {
+            cov_samples_file << xy_samples[x_sample_id] << " " << xy_samples[y_sample_id] <<
+                             " " << theta_samples[theta_sample_id] << " " << sample_cost << std::endl;
         }
+      }
     }
-    if(cov_samples_file.is_open()) cov_samples_file.close();
+  }
+  if(cov_samples_file.is_open()) cov_samples_file.close();
 
-    //Find the approximating quadratic function by linear least squares
-    // f(x,y,z) = ax^2 + by^2 + cz^2 + dxy + eyz + fzx + gx+ hy + iz + j
-    // A = [x^2, y^2, z^2, xy, yz, zx, x, y, z, 1]
-    Eigen::MatrixXd A(number_of_samples, 10);
-    A << samples_x_values.array().square().matrix(),
-            samples_y_values.array().square().matrix(),
-            samples_yaw_values.array().square().matrix(),
-            (samples_x_values.array()*samples_y_values.array()).matrix(),
-            (samples_y_values.array()*samples_yaw_values.array()).matrix(),
-            (samples_yaw_values.array()*samples_x_values.array()).matrix(),
-            samples_x_values,
-            samples_y_values,
-            samples_yaw_values,
-            Eigen::MatrixXd::Ones(number_of_samples,1);
+  //Find the approximating quadratic function by linear least squares
+  // f(x,y,z) = ax^2 + by^2 + cz^2 + dxy + eyz + fzx + gx+ hy + iz + j
+  // A = [x^2, y^2, z^2, xy, yz, zx, x, y, z, 1]
+  Eigen::MatrixXd A(number_of_samples, 10);
+  A << samples_x_values.array().square().matrix(),
+          samples_y_values.array().square().matrix(),
+          samples_yaw_values.array().square().matrix(),
+          (samples_x_values.array()*samples_y_values.array()).matrix(),
+          (samples_y_values.array()*samples_yaw_values.array()).matrix(),
+          (samples_yaw_values.array()*samples_x_values.array()).matrix(),
+          samples_x_values,
+          samples_y_values,
+          samples_yaw_values,
+          Eigen::MatrixXd::Ones(number_of_samples,1);
 
-    Eigen::VectorXd quad_func_coefs = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(samples_cost_values);
+  Eigen::VectorXd quad_func_coefs = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(samples_cost_values);
 
-    // With the coefficients, we can contruct the Hessian matrix (constant for a given function)
-    Eigen::Matrix3d hessian_matrix;
-    hessian_matrix << 2*quad_func_coefs[0],   quad_func_coefs[3],   quad_func_coefs[5],
-            quad_func_coefs[3], 2*quad_func_coefs[1],   quad_func_coefs[4],
-            quad_func_coefs[5],   quad_func_coefs[4], 2*quad_func_coefs[2];
+  // With the coefficients, we can contruct the Hessian matrix (constant for a given function)
+  Eigen::Matrix3d hessian_matrix;
+  hessian_matrix << 2*quad_func_coefs[0],   quad_func_coefs[3],   quad_func_coefs[5],
+          quad_func_coefs[3], 2*quad_func_coefs[1],   quad_func_coefs[4],
+          quad_func_coefs[5],   quad_func_coefs[4], 2*quad_func_coefs[2];
 
-    // We need to check if the approximating function is convex (all eigs positive, we don't went the zero eigs either)
-    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigensolver(hessian_matrix);
-    Eigen::Vector3d eigValues;
-    Eigen::Matrix3d covariance_3x3;
+  // We need to check if the approximating function is convex (all eigs positive, we don't went the zero eigs either)
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigensolver(hessian_matrix);
+  Eigen::Vector3d eigValues;
+  Eigen::Matrix3d covariance_3x3;
 
-    if (eigensolver.info() != Eigen::Success) {
+  if (eigensolver.info() != Eigen::Success) {
+    cov_sampled_success = false;
+    std::cout << "Covariance sampling warning: Eigenvalues search failed." << std::endl;
+  }
+  else{
+    eigValues = eigensolver.eigenvalues();
+    if(eigValues[0] <= 0.0 || eigValues[1] <= 0.0 || eigValues[2] <= 0.0){
         cov_sampled_success = false;
-        std::cout << "Covariance sampling warning: Eigenvalues search failed." << std::endl;
+        std::cout << "Covariance sampling warning: Quadratic approximation not convex. Sampling will not be used for this scan." << std::endl;
     }
     else{
-        eigValues = eigensolver.eigenvalues();
-        if(eigValues[0] <= 0.0 || eigValues[1] <= 0.0 || eigValues[2] <= 0.0){
-            cov_sampled_success = false;
-            std::cout << "Covariance sampling warning: Quadratic approximation not convex. Sampling will not be used for this scan." << std::endl;
-        }
-        else{
-            // Compute the covariance from the hessian and scale by the score
-            double score_scale = 1.0;
-            if(radar_reg->GetCovarianceScaler(score_scale)) {
+      // Compute the covariance from the hessian and scale by the score
+      double score_scale = 1.0;
+      if(radar_reg->GetCovarianceScaler(score_scale)) {
 
-                covariance_3x3 = 2.0 * hessian_matrix.inverse() * score_scale * par.cov_sampling_covariance_scaler;
+        covariance_3x3 = 2.0 * hessian_matrix.inverse() * score_scale * par.cov_sampling_covariance_scaler;
 
-                //We need to construct the full 6DOF cov matrix
-                cov_sampled = Eigen::Matrix<double, 6, 6>::Identity();
-                cov_sampled.block<2, 2>(0, 0) = covariance_3x3.block<2, 2>(0, 0);
-                cov_sampled(5, 5) = covariance_3x3(2, 2);
-                cov_sampled(0, 5) = covariance_3x3(0, 2);
-                cov_sampled(1, 5) = covariance_3x3(1, 2);
-                cov_sampled(5, 0) = covariance_3x3(2, 0);
-                cov_sampled(5, 1) = covariance_3x3(2, 1);
-            }
-            else cov_sampled_success = false;
-        }
-
+        //We need to construct the full 6DOF cov matrix
+        cov_sampled = Eigen::Matrix<double, 6, 6>::Identity();
+        cov_sampled.block<2, 2>(0, 0) = covariance_3x3.block<2, 2>(0, 0);
+        cov_sampled(5, 5) = covariance_3x3(2, 2);
+        cov_sampled(0, 5) = covariance_3x3(0, 2);
+        cov_sampled(1, 5) = covariance_3x3(1, 2);
+        cov_sampled(5, 0) = covariance_3x3(2, 0);
+        cov_sampled(5, 1) = covariance_3x3(2, 1);
+      }
+      else cov_sampled_success = false;
     }
-
-    return cov_sampled_success;
+  }
+  return cov_sampled_success;
 }
 
 void OdometryKeyframeFuser::pointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg_in){
