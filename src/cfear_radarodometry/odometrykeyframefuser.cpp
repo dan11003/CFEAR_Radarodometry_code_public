@@ -399,7 +399,7 @@ void OdometryKeyframeFuser::pointcloudCallback(pcl::PointCloud<pcl::PointXYZI>::
   nr_callbacks_++;
   Tcurr = Tcurrent;
   ros::Time t2 = ros::Time::now();
-  CFEAR_Radarodometry::timing.Document("Registration",CFEAR_Radarodometry::ToMs(t2-t));
+  CFEAR_Radarodometry::timing.Document("Registration",CFEAR_Radarodometry::ToMs(t2-t1));
 
 }
 
