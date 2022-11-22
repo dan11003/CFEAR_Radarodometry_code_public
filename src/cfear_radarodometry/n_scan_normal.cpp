@@ -118,7 +118,8 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
     //  FOr visualization only
     if(success)
       for(size_t i = 0 ; i<n_scans ; i++)
-        Tsrc[i] = vectorToAffine3d(parameters[i]);
+          Tsrc[i] = vectorToAffine3d(parameters[i]);
+
     double current_score = summary_.final_cost;
     const double rel_improvement = (prev_score-current_score)/prev_score;
     const Eigen::Vector2d trans_diff(parameters.back()[0] - prev_par[0],parameters.back()[1] - prev_par[1]);
@@ -412,7 +413,16 @@ bool n_scan_normal_reg::GetCovariance(Matrix6d &Cov){
   else{
     double covariance_xx[3 * 3];
     covariance.GetCovarianceBlock(v, v, covariance_xx);
-    Eigen::MatrixXd cmat = 10*Eigen::Map<Eigen::Matrix<double,3,3> >(covariance_xx);
+    //DONE BUT IT IS BAD: Should be scaled by num. of residuals and score (Andrea Censi 2007, (3))
+    if(summary_.num_residuals_reduced-summary_.num_parameters_reduced==0) return false;
+    Eigen::MatrixXd cmat = 30*(summary_.final_cost/(summary_.num_residuals_reduced-summary_.num_parameters_reduced))
+            * Eigen::Map<Eigen::Matrix<double,3,3>>(covariance_xx);
+    //  cout << "Covariance scaling: " << 30.0*(summary_.final_cost/(summary_.num_residuals_reduced-summary_.num_parameters_reduced))
+    //       << endl;
+
+    // The original way by Daniel:
+    // Eigen::MatrixXd cmat =  2.0 * Eigen::Map<Eigen::Matrix<double,3,3> >(covariance_xx); // Magic constat based on data
+
     Cov = Eigen::Matrix<double,6,6>::Identity();
     Cov.block<2,2>(0,0) = cmat.block<2,2>(0,0);
     Cov(5,5) = cmat(2,2);
@@ -421,6 +431,15 @@ bool n_scan_normal_reg::GetCovariance(Matrix6d &Cov){
     return true;
   }
 }
+
+bool n_scan_normal_reg::GetCovarianceScaler(double &cov_scale){
+    //Cov should be scaled by num. of residuals and score (Andrea Censi 2007, (3))
+    if(summary_.num_residuals_reduced-summary_.num_parameters_reduced==0) return false;
+
+    cov_scale = summary_.final_cost/(summary_.num_residuals_reduced-summary_.num_parameters_reduced);
+    return true;
+}
+
 bool n_scan_normal_reg::SolveOptimizationProblem(){
 
   CHECK(problem_ != nullptr);

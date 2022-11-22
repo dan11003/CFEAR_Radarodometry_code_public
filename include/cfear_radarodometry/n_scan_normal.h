@@ -46,6 +46,8 @@ public:
 
   double getScore(){return score_;}
 
+  bool GetCovarianceScaler(double &cov_scale);
+
   void getScore(double& score, int& num_residuals){score = score_; num_residuals = problem_->NumResiduals();}
 
   void SetD2dPar(const double cov_scale,const double regularization){cov_scale_ = cov_scale; regularization_ = regularization;}

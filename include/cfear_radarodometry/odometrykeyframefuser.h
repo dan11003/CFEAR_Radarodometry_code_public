@@ -27,6 +27,7 @@
 #include <time.h>
 #include <cstdio>
 
+
 #include <pcl_ros/transforms.h>
 #include "pcl_ros/publisher.h"
 
@@ -51,6 +52,7 @@ using std::string;
 using std::cout;
 using std::cerr;
 using std::endl;
+
 
 
 
@@ -99,8 +101,19 @@ public:
     double covar_scale_ = 1.0;
     double regularization_ = 0.0;
 
+    bool estimate_cov_by_sampling = false;
+    bool cov_samples_to_file_as_well = false; // Will save in the desired folder
+    std::string cov_sampling_file_directory = "/tmp/cfear_out";
+    double cov_sampling_xy_range = 0.4;  // Will sample from -0.2 to +0.2
+    double cov_sampling_yaw_range = 0.0043625; //Will sample from -half to +half of this range as well
+    unsigned int cov_sampling_samples_per_axis = 3; //Will do 5^3 in the end
+    double cov_sampling_covariance_scaler = 4.0;
+
+
     bool publish_tf_ = true;
     bool store_graph = false;
+
+
 
     void GetParametersFromRos( ros::NodeHandle& param_nh){
       param_nh.param<std::string>("input_points_topic", input_points_topic, "/Navtech/Filtered");
@@ -170,6 +183,13 @@ public:
       stringStream << "publish_tf, "<<std::boolalpha<<publish_tf_<<endl;
       stringStream << "store graph, "<<store_graph<<endl;
       stringStream << "Weight, "<<weight_opt<<endl;
+      stringStream << "Use cost sampling for covariance, "<<std::boolalpha<<estimate_cov_by_sampling<<endl;
+      stringStream << "Save cost samples to a file, "<<std::boolalpha<<cov_samples_to_file_as_well<<endl;
+      stringStream << "Cost-samples-file folder, "<<cov_sampling_file_directory<<endl;
+      stringStream << "XY sampling range, "<<cov_sampling_xy_range<<endl;
+      stringStream << "Yaw sampling range, "<<cov_sampling_yaw_range<<endl;
+      stringStream << "Cost samples per axis, "<<cov_sampling_samples_per_axis<<endl;
+      stringStream << "Sampled covariance scale, "<<cov_sampling_covariance_scaler<<endl;
       return stringStream.str();
     }
   };
@@ -239,6 +259,8 @@ private:
 
   void pointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_filtered);
 
+  bool approximateCovarianceBySampling(std::vector<CFEAR_Radarodometry::MapNormalPtr> &scans_vek, const std::vector<Eigen::Affine3d> &T_vek, Covariance &cov_sampled);
+
 
 
 
@@ -255,4 +277,8 @@ void FormatScans(const PoseScanVector& reference,
                  std::vector<Eigen::Affine3d>& T_vek
                  );
 
+template<typename T> std::vector<double> linspace(T start_in, T end_in, int num_in);
+
 }
+
+

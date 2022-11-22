@@ -170,6 +170,13 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("loss_type", po::value<std::string>()->default_value("Huber"), "robust loss function eg. Huber Caunchy, None")
         ("loss_limit", po::value<double>()->default_value(0.1), "loss limit")
         ("covar_scale", po::value<double>()->default_value(1), "covar scale")// Please fix combined parameter
+        ("covar_sampling", po::value<bool>()->default_value(false), "Covar. by cost sampling")
+        ("covar_sample_save", po::value<bool>()->default_value(false), "Dump cost samples to a file")
+        ("covar_sample_dir", po::value<std::string>()->default_value("/tmp/cfear_out"), "Where to save the cost samples")
+        ("covar_XY_sample_range", po::value<double>()->default_value(0.4), "Sampling range on the x and y axes")
+        ("covar_yaw_sample_range", po::value<double>()->default_value(0.0043625), "Sampling range on the yaw axis")
+        ("covar_samples_per_axis", po::value<int>()->default_value(3), "Num. of samples per axis for covar. sampling")
+        ("covar_sampling_scale", po::value<double>()->default_value(4), "Sampled covar. scale")
         ("regularization", po::value<double>()->default_value(1), "regularization")
         ("est_directory", po::value<std::string>()->default_value(""), "output folder of estimated trajectory")
         ("gt_directory", po::value<std::string>()->default_value(""), "output folder of ground truth trajectory")
@@ -184,6 +191,7 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
         ("store_graph", po::value<bool>()->default_value(false),"store_graph")
         ("save_radar_img", po::value<bool>()->default_value(false),"save_radar_img")
         ("bag_path", po::value<std::string>()->default_value("/home/daniel/rosbag/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/radar/2019-01-10-12-32-52-radar-oxford-10k.bag"), "bag file to open");
+
 
     po::variables_map vm;
     store(parse_command_line(argc, argv, desc), vm);
@@ -207,6 +215,20 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
       par.loss_limit_ = vm["loss_limit"].as<double>();
     if (vm.count("covar_scale"))
       par.covar_scale_ = vm["covar_scale"].as<double>();
+    if (vm.count("covar_sampling"))
+        par.estimate_cov_by_sampling = vm["covar_sampling"].as<bool>();
+    if (vm.count("covar_sample_save"))
+        par.cov_samples_to_file_as_well = vm["covar_sample_save"].as<bool>();
+    if (vm.count("covar_sample_dir"))
+        par.cov_sampling_file_directory = vm["covar_sample_dir"].as<std::string>();
+    if (vm.count("covar_XY_sample_range"))
+        par.cov_sampling_xy_range = vm["covar_XY_sample_range"].as<double>();
+    if (vm.count("covar_yaw_sample_range"))
+        par.cov_sampling_yaw_range = vm["covar_yaw_sample_range"].as<double>();
+    if (vm.count("covar_samples_per_axis"))
+        par.cov_sampling_samples_per_axis = vm["covar_samples_per_axis"].as<int>();
+    if (vm.count("covar_sampling_scale"))
+        par.cov_sampling_covariance_scaler = vm["covar_sampling_scale"].as<double>();
     if (vm.count("regularization"))
       par.regularization_ = vm["regularization"].as<double>();
     if (vm.count("submap_scan_size"))
@@ -243,10 +265,10 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
       rad_par.window_size = vm["covar_scale"].as<double>();
 
 
-    p.save_radar_img = vm["save_radar_img"].as<bool>();;
+    p.save_radar_img = vm["save_radar_img"].as<bool>();
     rad_par.filter_type_ = Str2filter(vm["filter-type"].as<std::string>());
-    par.store_graph = vm["store_graph"].as<bool>();;
-    par.weight_intensity_ = vm["weight_intensity"].as<bool>();;
+    par.store_graph = vm["store_graph"].as<bool>();
+    par.weight_intensity_ = vm["weight_intensity"].as<bool>();
     par.compensate = !vm["disable_compensate"].as<bool>();
     par.use_guess = true; //vm["soft_constraint"].as<bool>();
     par.soft_constraint = false; // soft constraint is rarely useful, this is changed for testing of initi // vm["soft_constraint"].as<bool>();
