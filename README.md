@@ -5,6 +5,7 @@ This guide describes how to download data and estimate radar odometry using CFEA
 ## Prerequisites
   * Install the Google Ceres solver  http://ceres-solver.org/installation.html
   * ROS [Melodic](http://wiki.ros.org/melodic) or later, tested with ubuntu 16.04, 18.04 and 20.04
+  * The master branch contains the code used in the T-RO submission.
 
 ## How to build with catkin
 
