@@ -434,7 +434,7 @@ void OdometryKeyframeFuser::AddToGraph(PoseScanVector& reference, RadarScan& sca
       const Eigen::Affine3d Tto = itr->GetPose();
       Eigen::Affine3d Tdiff = Tfrom.inverse()*Tto;
       Eigen::Matrix<double,6,6> C = Cov;
-      C.block<3,3>(0,0) = Tfrom.rotation()*Cov.block<3,3>(0,0)*Tfrom.rotation().transpose(); //Change frame to Tprev
+      C.block<3,3>(0,0) = Tfrom.inverse().rotation()*Cov.block<3,3>(0,0)*Tfrom.inverse().rotation().transpose(); //Change frame to Tprev
       constraints.push_back({scan.idx_, itr->idx_, PoseEigToCeres(Tdiff), C.inverse(), ConstraintType::odometry});
       break;
     }
