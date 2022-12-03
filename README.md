@@ -119,11 +119,15 @@ This repository is based on the conference paper presented at [IROS 2021](https:
 <summary>Bibtex</summary>
  
 ```
-@INPROCEEDINGS{9636253,  author={Adolfsson, Daniel and Magnusson, Martin and Alhashimi, Anas and Lilienthal, Achim J. and Andreasson, Henrik},
-booktitle={2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
-title={CFEAR Radarodometry - Conservative Filtering for Efficient and Accurate Radar Odometry},
-year={2021},  volume={},  number={},  pages={5462-5469},
-doi={10.1109/IROS51168.2021.9636253}}
+@ARTICLE{9969174,
+  author={Adolfsson, Daniel and Magnusson, Martin and Alhashimi, Anas and Lilienthal, Achim J. and Andreasson, Henrik},
+  journal={IEEE Transactions on Robotics}, 
+  title={Lidar-Level Localization With Radar? The CFEAR Approach to Accurate, Fast, and Robust Large-Scale Radar Odometry in Diverse Environments}, 
+  year={2022},
+  volume={},
+  number={},
+  pages={1-20},
+  doi={10.1109/TRO.2022.3221302}}
   
 ```
 </details>  
