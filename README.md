@@ -100,6 +100,7 @@ sudo ln -s /usr/include/lz4hc.h /usr/include/flann/ext/lz4hc.h
 ## Future
 
 * Prepare demo for MulRan, VolvoCE, Kvarntorp and Orkla.
+* Integrate reading of the raw data format adopted in the [Oxford dataset](https://github.com/ori-mrg/robotcar-dataset-sdk).
 
 ## Developing
 
