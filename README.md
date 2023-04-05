@@ -3,7 +3,9 @@ aka
 ## CFEAR Radar odometry
 This guide describes how to download data and estimate radar odometry using CFEAR Radar odometry
 
-Paper [published in T-RO](https://ieeexplore.ieee.org/document/9969174) or on
+## News (April 2023): Article is now published in Transactions on Robotics
+
+Paper: [T-RO](https://ieeexplore.ieee.org/document/9969174) or on
 [arXiv](https://arxiv.org/abs/2211.02445)
 <details>
 <summary>Bibtex</summary>
