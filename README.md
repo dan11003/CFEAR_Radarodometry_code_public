@@ -1,6 +1,31 @@
-# CFEAR Radarodometry
-This guide describes how to download data and estimate radar odometry using CFEAR_Radarodometry
-![final odometry](odometry_oxford.jpg)
+# Lidar-Level Localization With Radar? The CFEAR Approach to Accurate, Fast, and Robust Large-Scale Radar Odometry in Diverse Environments
+aka
+## CFEAR Radar odometry
+This guide describes how to download data and estimate radar odometry using CFEAR Radar odometry
+
+Paper [published in T-RO](https://ieeexplore.ieee.org/document/9969174) or on
+[arXiv](https://arxiv.org/abs/2211.02445)
+<details>
+<summary>Bibtex</summary>
+ 
+```
+@ARTICLE{9969174,
+  author={Adolfsson, Daniel and Magnusson, Martin and Alhashimi, Anas and Lilienthal, Achim J. and Andreasson, Henrik},
+  journal={IEEE Transactions on Robotics}, 
+  title={Lidar-Level Localization With Radar? The CFEAR Approach to Accurate, Fast, and Robust Large-Scale Radar Odometry in Diverse Environments}, 
+  year={2023},
+  volume={39},
+  number={2},
+  pages={1476-1495},
+  doi={10.1109/TRO.2022.3221302}}
+  
+```
+</details>  
+
+
+
+<img src="odometry_oxford.jpg" width="500" height="500">
+
   
 ## Prerequisites
   * Install the Google Ceres solver  http://ceres-solver.org/installation.html
@@ -115,23 +140,8 @@ Don't forget to specify the sensor resolution and the dataset parameter if you u
 ## Updates
 Follow our updates [here](https://github.com/dan11003/CFEAR_Radarodometry).
 
-This repository is based on the conference paper presented at [IROS 2021](https://ieeexplore.ieee.org/document/9636253). Journal is currently under review.
-<details>
-<summary>Bibtex</summary>
- 
-```
-@ARTICLE{9969174,
-  author={Adolfsson, Daniel and Magnusson, Martin and Alhashimi, Anas and Lilienthal, Achim J. and Andreasson, Henrik},
-  journal={IEEE Transactions on Robotics}, 
-  title={Lidar-Level Localization With Radar? The CFEAR Approach to Accurate, Fast, and Robust Large-Scale Radar Odometry in Diverse Environments}, 
-  year={2022},
-  volume={},
-  number={},
-  pages={1-20},
-  doi={10.1109/TRO.2022.3221302}}
-  
-```
-</details>  
+
+
 
 
 
