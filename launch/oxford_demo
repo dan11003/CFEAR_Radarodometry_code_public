@@ -29,7 +29,7 @@ mkdir -p "${gt_dir}"
 
 
 
-# PARAMETERS CFEAR-3
+# PARAMETERS CFEAR-3 (1.2% drift)
 export cost_type="P2P"
 export submap_scan_size="4"
 export registered_min_keyframe_dist="1.5"
@@ -58,6 +58,17 @@ export weight_intensity="true"
 #export zmin="70"
 #export weight_option="4"
 #export weight_intensity="true"
+
+# PARAMETERS CFEAR-3-s50 (1.09% drift on average)
+#export cost_type="P2P"
+#export submap_scan_size="50"
+#export registered_min_keyframe_dist="1.5"
+#export res="3"
+#export kstrong="40"
+#export zmin="60"
+#export weight_option="4"
+#export weight_intensity="true"
+#export LOSS_TYPE="Cauchy" # comment out Huber below (line 79)
 
 # OTHER PARAMETERS #
 export range_res="0.0438"
