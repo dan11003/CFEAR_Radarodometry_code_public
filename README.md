@@ -39,6 +39,7 @@ Paper: [T-RO](https://ieeexplore.ieee.org/document/9969174) or on
 ## How to build with catkin
 
 ```
+$ mkdir -p ~/catkin_ws/src/
 $ cd ~/catkin_ws/src/
 $ git clone https://github.com/dan11003/CFEAR_Radarodometry_code_public.git
 $ cd ~/catkin_ws
@@ -47,11 +48,12 @@ $ source ~/catkin_ws/devel/setup.bash
 ```
 ## Downloading data (Oxford Radar RobotCar)
 Currently, only rosbags that contain sensor_msgs/Image are supported.
-We prepared a rosbag from the Oxford Radar Robotcar dataset on our [google drive](https://drive.google.com/drive/folders/12YNIvHQqSO5Et3UIzKD1z3XQACpoGZ1L?usp=sharing)
+We prepared a rosbag from the Oxford Radar Robotcar dataset on our [google drive](https://drive.google.com/drive/folders/12YNIvHQqSO5Et3UIzKD1z3XQACpoGZ1L?usp=sharing).
 Download the Oxford bag file from (processed rosbag)/2019-01-10-12-32-52-radar-oxford-10k.bag to the folder created below:
 ```
-mkdir -p /home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/
-cd /home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/
+$ mkdir -p /home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/
+$ cd /home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/
+$ mv ~/Downloads/2019-01-10-12-32-52-radar-oxford-10k.bag .
 ```
 
 ## Running
@@ -70,10 +72,10 @@ roscd cfear_radarodometry/launch
 cd ~/catkin_ws/src/
 git clone https://github.com/dan11003/radar_kitti_benchmark 
 cd radar_kitti_benchmark/python
-./oxford_demo_eval.sh
+./oxford_demo_eval.sh # Note that every run is evaluated
 ```
 
-This will compute odometry error metrics and draw graphs and figures and save these to the folder:
+This will compute odometry error metrics, draw graphs and figures, and save these to the folder:
 ```
 /home/${USER}/Documents/oxford-eval-sequences/2019-01-10-12-32-52-radar-oxford-10k/eval/<yyyy-mm-dd_HH:mm>,`
 ```
