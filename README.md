@@ -63,7 +63,7 @@ The odometry can be launched in two modes.
 
 ```
 roscd cfear_radarodometry/launch
-./oxford_demo
+./oxford_demo # (Note: oxford trajectory is mirrored)
 ```
 
 ## Optional -  Evaluate odometry quality
