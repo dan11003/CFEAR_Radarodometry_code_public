@@ -28,7 +28,7 @@ Paper: [T-RO](https://ieeexplore.ieee.org/document/9969174) or on
 
 
 
-<img src="odometry_oxford.jpg" width="500" height="500">
+<img src="cfear_3_animation.gif" width="500" height="500">
 
   
 ## Prerequisites
