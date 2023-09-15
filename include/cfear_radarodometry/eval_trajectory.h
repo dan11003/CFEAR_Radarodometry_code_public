@@ -137,6 +137,11 @@ public:
   //void AlignTrajectories();
 
   poseStampedVector& GetGtVek(){return gt_vek; }
+  
+  bool Interpolate(const ros::Time& t, poseStamped& Tinterpolated) {
+    auto init_guess = gt_vek.begin();
+    return Interpolate(t, Tinterpolated, init_guess); 
+  }
 
 
 private:

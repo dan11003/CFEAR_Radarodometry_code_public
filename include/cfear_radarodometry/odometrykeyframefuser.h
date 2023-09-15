@@ -239,6 +239,15 @@ public:
 
   void AddGroundTruth(poseStampedVector& gt_vek);
 
+  inline std::pair<RadarScan, std::vector<Constraint3d>> GetLastNode() {
+    if (!graph_.empty()) {
+      return graph_.back();
+    }
+    else {
+      return std::make_pair(RadarScan(), std::vector<Constraint3d>());
+    }
+  }
+
 private: 
 
   bool AccelerationVelocitySanityCheck(const Eigen::Affine3d& Tmot_prev, const Eigen::Affine3d& Tmot_curr);
