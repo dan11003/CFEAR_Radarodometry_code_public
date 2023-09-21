@@ -156,6 +156,8 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
   std::vector<Eigen::Affine3d> T_vek;
   ros::Time t1 = ros::Time::now();
 
+  //std::cout << "par.res: " << par.res << std::endl;
+
   CFEAR_Radarodometry::MapNormalPtr Pcurrent = CFEAR_Radarodometry::MapNormalPtr(new MapPointNormal(cloud, par.res, Eigen::Vector2d(0,0), par.weight_intensity_, par.use_raw_pointcloud));
 
   ros::Time t2 = ros::Time::now();
@@ -230,7 +232,7 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
 
 
   if(success && fuse){
-    cout << "fuse" <<endl;
+    //cout << "fuse" <<endl;
     distance_traveled += Tkeydiff.translation().norm();
     Tprev_fused = Tcurrent;
     pcl::PointCloud<pcl::PointXYZI> cld_keyframe = FormatScanMsg(*cloud, Tcurrent);
@@ -245,8 +247,8 @@ void OdometryKeyframeFuser::processFrame(pcl::PointCloud<pcl::PointXYZI>::Ptr& c
     updated = true;
 
   }
-  else
-    cout << "no fuse" <<endl;
+  //else
+    //cout << "no fuse" <<endl;
   ros::Time t4 = ros::Time::now();
   CFEAR_Radarodometry::timing.Document("compensate", ToMs(t1-t0));
   CFEAR_Radarodometry::timing.Document("build_normals", ToMs(t2-t1));

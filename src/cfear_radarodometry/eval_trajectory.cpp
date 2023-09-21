@@ -11,6 +11,8 @@ EvalTrajectory::EvalTrajectory(const EvalTrajectory::Parameters& pars, bool disa
     if(par.synced_callback){
       pose_sub_gt  = new message_filters::Subscriber<nav_msgs::Odometry>(nh_, par.odom_gt_topic, 100);
       pose_sub_est  = new message_filters::Subscriber<nav_msgs::Odometry>(nh_, par.odom_est_topic, 100);
+      std::cout << par.odom_gt_topic << std::endl;
+      std::cout << par.odom_est_topic << std::endl;
       sync = new Synchronizer<double_odom>(double_odom(100), *pose_sub_gt, *pose_sub_est);
       sync->registerCallback(boost::bind(&EvalTrajectory::CallbackSynchronized,this, _1, _2));
     }
@@ -26,7 +28,6 @@ EvalTrajectory::EvalTrajectory(const EvalTrajectory::Parameters& pars, bool disa
 
 
 void EvalTrajectory::CallbackSynchronized(const nav_msgs::Odometry::ConstPtr& msg_est, const nav_msgs::Odometry::ConstPtr& msg_gt){
-  cout<<"callback"<<endl;
   Eigen::Affine3d T;
   Covariance cov;
 
