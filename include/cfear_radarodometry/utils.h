@@ -58,9 +58,63 @@ Eigen::Matrix3d getScaledRotationMatrix(const std::vector<double>& parameters, d
 
 template<typename T>
 void printVector(const T& t) {
-    std::copy(t.cbegin(), t.cend(), std::ostream_iterator<typename T::value_type>(std::cout, ", "));
+  std::copy(t.cbegin(), t.cend(), std::ostream_iterator<typename T::value_type>(std::cout, ", "));
+}
+template <typename T, typename U>
+std::string Join( const std::map<T,U>& str_map, const bool first){
+  std::stringstream ss;
+  ss << std::fixed << std::setprecision(6);
+  if(str_map.empty())
+    return ss.str();
+  else if(str_map.size() == 1)
+    ss << str_map.begin()->first;
+  else{
+    for(auto itr = str_map.begin() ; itr != str_map.end() ; itr++){
+      if(first)
+        ss <<  itr->first;
+      else
+        ss << itr->second;
+      if( std::next(itr) != str_map.end())
+        ss << ",";
+    }
+  }
+  return ss.str();
 }
 
+
+  /*
+std::string Join( const std::map<std::string,std::string>& str_map, const bool first){
+  std::stringstream ss;
+  if(str_map.empty())
+    return ss.str();
+  else if(str_map.size() == 1)
+    ss << str_map.begin()->first;
+  else{
+    for(auto itr = str_map.begin() ; itr != str_map.end() ; itr++){
+      ss <<  (first ? itr->first : itr->second);
+      if( std::next(itr) != str_map.end())
+        ss << ",";
+    }
+  }
+  return ss.str();
+}*/
+
+  /*std::string Join( const std::map<std::string,double>& str_map, const bool first){
+  std::stringstream ss;
+  if(str_map.empty())
+    return ss.str();
+  else if(str_map.size() == 1)
+    ss << str_map.begin()->first;
+  else{
+    for(auto itr = str_map.begin() ; itr != str_map.end() ; itr++){
+      if()
+      ss <<  (first ? itr->first : itr->second);
+      if( std::next(itr) != str_map.end())
+        ss << ",";
+    }
+  }
+  return ss.str();
+}*/
 
 
 }

@@ -55,11 +55,13 @@ export radar_ccw="false" #False for oxford, otherwise true
 export soft_constraint="false"
 export disable_compensate="false"
 export dataset="oxford"
-export LOSS_TYPE="Huber"
+export LOSS_TYPE="Huber" #"Huber" "Cauchy" 
 export LOSS_LIMIT="0.1"
 
+# COV SAMPLING PARS
+export covar_sampling="False"
 
-pars="--range-res ${range_res} --sequence ${SEQUENCE} --radar_ccw ${radar_ccw} --soft_constraint ${soft_constraint} --disable_compensate ${disable_compensate} --cost_type ${cost_type} --submap_scan_size ${submap_scan_size} --registered_min_keyframe_dist ${registered_min_keyframe_dist} --res ${res} --k_strongest ${kstrong} --bag_path ${BAG_FILE_PATH} --est_directory ${est_dir} --gt_directory ${gt_dir} --job_nr 1 --z-min ${zmin} --loss_type ${LOSS_TYPE} --loss_limit ${LOSS_LIMIT}  --weight_intensity ${weight_intensity} --method ${EVALUATION_description} --weight_option ${weight_option} --dataset ${dataset} --store_graph false --save_radar_img false"
+pars="--range-res ${range_res} --sequence ${SEQUENCE} --radar_ccw ${radar_ccw} --soft_constraint ${soft_constraint} --disable_compensate ${disable_compensate} --cost_type ${cost_type} --submap_scan_size ${submap_scan_size} --registered_min_keyframe_dist ${registered_min_keyframe_dist} --res ${res} --k_strongest ${kstrong} --bag_path ${BAG_FILE_PATH} --est_directory ${est_dir} --gt_directory ${gt_dir} --job_nr 1 --z-min ${zmin} --loss_type ${LOSS_TYPE} --loss_limit ${LOSS_LIMIT}  --weight_intensity ${weight_intensity} --method ${EVALUATION_description} --weight_option ${weight_option} --dataset ${dataset} --store_graph true --save_radar_img true --covar_sampling ${covar_sampling}"
 echo "|||||Estimating odometry with parameters: ${pars}||||"
 roslaunch cfear_radarodometry vis.launch&
 rosrun cfear_radarodometry offline_odometry ${pars} #>/dev/null

@@ -177,7 +177,8 @@ public:
 
     ros::Time t2 = ros::Time::now();
 
-    CFEAR_Radarodometry::MapNormalPtr Nsrc = CFEAR_Radarodometry::MapNormalPtr ( new CFEAR_Radarodometry::MapPointNormal(src_local_intensity,    resolution_));
+    //std::cout << resoltuion_ << std::endl;
+    CFEAR_Radarodometry::MapNormalPtr Nsrc = CFEAR_Radarodometry::MapNormalPtr ( new CFEAR_Radarodometry::MapPointNormal(src_local_intensity, resolution_));
     CFEAR_Radarodometry::MapNormalPtr Ntar = CFEAR_Radarodometry::MapNormalPtr ( new CFEAR_Radarodometry::MapPointNormal(tar_local_intensity, resolution_));
     std::vector<CFEAR_Radarodometry::MapNormalPtr> scans{Ntar, Nsrc};
     const Eigen::Affine3d Tinit = Ttar.inverse()*Tsrc;

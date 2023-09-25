@@ -623,7 +623,7 @@ void MapPointNormal::PublishDataAssociationsMap(const std::string& topic, const 
 
 }
 
-void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eigen::Affine3d& T, const std::string& frame_id, const int value, float alpha){
+void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, const Eigen::Affine3d& T, const std::string& frame_id, const int value, float alpha){
   if(map==NULL)
     return;
 

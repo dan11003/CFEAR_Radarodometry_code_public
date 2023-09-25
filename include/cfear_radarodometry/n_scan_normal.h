@@ -46,7 +46,13 @@ public:
 
   double getScore(){return score_;}
 
+  bool GetCovarianceScaler(double &cov_scale);
+
+  void getScore(double& score, int& num_residuals){score = score_; num_residuals = problem_->NumResiduals();}
+
   void SetD2dPar(const double cov_scale,const double regularization){cov_scale_ = cov_scale; regularization_ = regularization;}
+
+  void SetParameters(unsigned int max_itr_association, unsigned int max_itr_solver);
 
   void AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr& src_local, const Eigen::Affine2d& Ttar, const Eigen::Affine2d& Tsrc, const size_t scan_idx_tar, const size_t scan_idx_src);
 
@@ -66,12 +72,13 @@ private:
   double cov_scale_ = 1;
   double regularization_ = 0.01;
   const double score_tolerance = 0.00001;
-  const double max_itr = 8, min_itr = 3;
+  double max_itr_association_ = 8, min_itr_ = 3;
   const bool efficient_implementation = true;
 
   bool time_continuous_ = false;
   std::vector<double> vel_parameters_;
   bool ccw_ = false;
+  unsigned int max_itr = 8;
 
   //std::vector<std::tuple<Eigen::Vector2d,Eigen::Vector2d,double,int> > vis_residuals;
 

@@ -93,9 +93,9 @@ do
                                                                     mkdir -p $JOB_FOLDER
                                                                     ./utils/execute_sequence ${seq} ${JOB_FOLDER} ${ccw} ${sc} ${comp} ${cost} ${keyframes} ${dist} ${res} ${kstrong} ${job_nr} ${zmin} ${loss} ${loss_lim} ${cov_scale} ${regularization} ${weight_intensity} ${weight_res_opt} ${PARAMETER_FILE}
                                                                     #kitti_dir=`rospack find kitti-odom-eval`
-                                                                    eval="$KITTI_DIR/python/eval_odom.py --dir ${JOB_FOLDER} --align 6dof --force yes"
-                                                                    #echo "eval command: $eval"
-                                                                    python3 $eval >/dev/null
+                                                                        eval="$KITTI_DIR/python/eval_odom.py --dir ${JOB_FOLDER} --align 6dof --force yes"
+                                                                        #echo "eval command: $eval"
+                                                                        python3 $eval >/dev/null
                                                                 fi
                                                            done
                                                        done

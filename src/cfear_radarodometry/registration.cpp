@@ -71,7 +71,6 @@ double Registration::Weights::GetWeight(const weightoption opt){
   case weightoption::Sim_direciton :   return sim_dir_;
   case weightoption::Sim_scale:        return Similarity(plan1_, plan2_);
   case weightoption::Combined_weights: return GetWeight(Sim_N) + GetWeight(Sim_direciton) + GetWeight(Sim_scale);
-
   }
 }
 
@@ -79,8 +78,9 @@ ceres::LossFunction* Registration::GetLoss(){
   ceres::LossFunction* ceres_loss = nullptr;
   if(loss_ == Huber)
     ceres_loss = new ceres::HuberLoss(loss_limit_);
-  else if( loss_ == Cauchy)
+  else if( loss_ == Cauchy){
     ceres_loss = new ceres::CauchyLoss(loss_limit_);
+  }
   else if( loss_ == SoftLOne)
     ceres_loss = new ceres::SoftLOneLoss(loss_limit_);
   else if( loss_ == Tukey)

@@ -13,6 +13,11 @@ n_scan_normal_reg::n_scan_normal_reg(){
   //this->options_.trust_region_strategy_type = ceres::TrustRegionStrategyType::LEVENBERG_MARQUARDT;
 
 }
+void n_scan_normal_reg::SetParameters(unsigned int max_itr_association, unsigned int max_itr_solver){
+  this->max_itr_association_ = max_itr_association;
+  this->options_.max_num_iterations = max_itr_solver;
+
+}
 
 n_scan_normal_reg::n_scan_normal_reg(const cost_metric &cost,loss_type loss, double loss_limit, const weightoption opt) : n_scan_normal_reg()
 {
@@ -94,7 +99,7 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
 
   std::vector<double> prev_par = parameters.back();
   double prev_score = DBL_MAX;
-  for(itr_ = 1 ; itr_<=8 && success; itr_++){
+  for(itr_ = 1 ; itr_<= max_itr_association_ && success; itr_++){
     scan_associations_.clear();
     weight_associations_.clear();
     success = BuildOptimizationProblem(scans, reg_cov.back(), guess, soft_constraints);
@@ -113,7 +118,8 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
     //  FOr visualization only
     if(success)
       for(size_t i = 0 ; i<n_scans ; i++)
-        Tsrc[i] = vectorToAffine3d(parameters[i]);
+          Tsrc[i] = vectorToAffine3d(parameters[i]);
+
     double current_score = summary_.final_cost;
     const double rel_improvement = (prev_score-current_score)/prev_score;
     const Eigen::Vector2d trans_diff(parameters.back()[0] - prev_par[0],parameters.back()[1] - prev_par[1]);
@@ -125,7 +131,7 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
       break;
     }*/
 
-    if( itr_ > min_itr){
+    if( itr_ > min_itr_){
       if(prev_score < current_score) // potential problem, recover to prev iteration
       {
         //CFEAR_Radarodometry::timing.Document("prev-better", 1);
@@ -182,8 +188,8 @@ bool n_scan_normal_reg::Register(std::vector<MapNormalPtr>& scans, std::vector<E
 bool n_scan_normal_reg::GetCost(std::vector<MapNormalPtr>& scans, std::vector<Eigen::Affine3d>& Tsrc, double& score, std::vector<double>& residuals){
   size_t n_scans = scans.size();
   assert( Tsrc.size()==n_scans && n_scans >= 2);
-  fixedBlock_ = std::vector<bool>(n_scans,false);
-  fixedBlock_.back() = true;
+  fixedBlock_ = std::vector<bool>(n_scans,true);
+  fixedBlock_.back() = false;
 
   parameters.resize(n_scans,std::vector<double>());
   for(size_t i = 0 ; i<n_scans ; i++){
@@ -202,12 +208,8 @@ bool n_scan_normal_reg::GetCost(std::vector<MapNormalPtr>& scans, std::vector<Ei
   }
   ceres::Problem::EvaluateOptions opt;
   bool success = problem_->Evaluate(opt, &score, &residuals, nullptr, nullptr);
-
-  return summary_.IsSolutionUsable();
-
-  score_ = this->summary_.final_cost/this->summary_.num_residuals;
-
-
+  score_ = score/( std::max((int)residuals.size(),1) );
+  return success;
 }
 
 void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr& src_local, const Eigen::Affine2d& Ttar, const Eigen::Affine2d& Tsrc, const size_t scan_idx_tar, const size_t scan_idx_src){
@@ -270,16 +272,11 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
     const Eigen::Vector2d tar_mean_world = Ttar*tar_mean;
     const Eigen::Vector2d src_mean_world = Tsrc*src_mean;
     const double weight_after_loss = weight_associations_[scan_pair][i].GetWeight(weight_opt_);
-
     //vis_residuals.push_back(std::make_tuple(src_mean_world,tar_mean_world,weight_after_loss,scan_idx_tar));
     //cout << "weight_after_loss: " << weight_after_loss <<", weight_opt_" <<weight_opt_<< endl;
     ceres::LossFunction* ceres_loss = new ceres::ScaledLoss(GetLoss(), weight_after_loss, ceres::TAKE_OWNERSHIP); // Important, loss should be applied after Mr. Huber
-
-
-
     ceres::CostFunction* cost_function = nullptr;
     if(cost_ == cost_metric::P2L){
-
       //const Eigen::Vector2d src_normal = src_local->GetNormal2d(ass_src_idx);
       //Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(ass_src_idx);// src.block<2,1>(0,src_idx);
       const Eigen::Vector2d tar_normal = target_local->GetNormal2d(ass_tar_idx);
@@ -416,7 +413,17 @@ bool n_scan_normal_reg::GetCovariance(Matrix6d &Cov){
   else{
     double covariance_xx[3 * 3];
     covariance.GetCovarianceBlock(v, v, covariance_xx);
-    Eigen::MatrixXd cmat = 10*Eigen::Map<Eigen::Matrix<double,3,3> >(covariance_xx);
+    //DONE BUT IT IS BAD: Should be scaled by num. of residuals and score (Andrea Censi 2007, (3))
+    if(summary_.num_residuals_reduced-summary_.num_parameters_reduced==0) return false;
+    Eigen::MatrixXd cmat = 30*(summary_.final_cost/(summary_.num_residuals_reduced-summary_.num_parameters_reduced))
+            * Eigen::Map<Eigen::Matrix<double,3,3>>(covariance_xx);
+    //  cout << "Covariance scaling: " << 30.0*(summary_.final_cost/(summary_.num_residuals_reduced-summary_.num_parameters_reduced))
+    //       << endl;
+
+    // The original way by Daniel:
+    // Eigen::MatrixXd cmat =  2.0 * Eigen::Map<Eigen::Matrix<double,3,3> >(covariance_xx); // Magic constat based on data
+
+    Cov = Eigen::Matrix<double,6,6>::Identity();
     Cov.block<2,2>(0,0) = cmat.block<2,2>(0,0);
     Cov(5,5) = cmat(2,2);
     Cov(0,5) = cmat(0,2);
@@ -424,6 +431,15 @@ bool n_scan_normal_reg::GetCovariance(Matrix6d &Cov){
     return true;
   }
 }
+
+bool n_scan_normal_reg::GetCovarianceScaler(double &cov_scale){
+    //Cov should be scaled by num. of residuals and score (Andrea Censi 2007, (3))
+    if(summary_.num_residuals_reduced-summary_.num_parameters_reduced==0) return false;
+
+    cov_scale = summary_.final_cost/(summary_.num_residuals_reduced-summary_.num_parameters_reduced);
+    return true;
+}
+
 bool n_scan_normal_reg::SolveOptimizationProblem(){
 
   CHECK(problem_ != nullptr);

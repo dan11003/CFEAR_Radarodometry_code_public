@@ -47,6 +47,7 @@ public:
     std::string dataset = "oxford";
     filtertype filter_type_ = filtertype::kstrong;
 
+
     void GetParametersFromRos( ros::NodeHandle& param_nh){
 
       param_nh.param<float>("range_res", range_res, 0.0438);
@@ -86,7 +87,10 @@ public:
 
   ~radarDriver(){}
 
-  void CallbackOffline(const sensor_msgs::ImageConstPtr &radar_image_polar, pcl::PointCloud<pcl::PointXYZI>::Ptr &cloud);
+  void CallbackOffline(const sensor_msgs::ImageConstPtr &radar_image_polar, pcl::PointCloud<pcl::PointXYZI>::Ptr &cloud,  pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_peaks);
+
+  cv_bridge::CvImagePtr cv_polar_image; //Latest radar image
+
 
 private:
 
@@ -96,6 +100,8 @@ private:
 
   void CallbackOxford(const sensor_msgs::ImageConstPtr &radar_image_polar);
 
+  void Process();
+
 
   Parameters par;
   std::vector<float> sin_values;
@@ -103,12 +109,12 @@ private:
   float max_distance_sqrd, min_distance_sqrd;
   ros::NodeHandle nh_;
   ros::Subscriber sub;
-  ros::Publisher FilteredPublisher,ExperimentalPublisher, UnfilteredPublisher;
+  ros::Publisher pub_filtered_, pub_peaks_;
   image_transport::Publisher pub;
   image_transport::ImageTransport it;
 
 
-  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered_, cloud_filtered_peaks_;
 
 
 };

@@ -148,6 +148,20 @@ void VectorXYeZtoAffine2d(const Eigen::Affine3d& T, Eigen::Vector3d& par){
 
 }
 
+std::string Join( const std::map<std::string,std::string>& str_map, const bool first){
+  std::string str = "";
+  if(str_map.empty())
+    return str;
+  else if(str_map.size() == 1)
+    return str_map.begin()->first;
+  for(auto itr = str_map.begin() ; itr != str_map.end() ; itr++){
+    str +=  first ? itr->first : itr->second;
+    if( std::next(itr) != str_map.end())
+      str += ",";
+  }
+  return str;
+}
+
 
 
 
