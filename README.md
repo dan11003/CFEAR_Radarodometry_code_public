@@ -1,7 +1,5 @@
-# CFEAR Radar odometry
-presented in the article
-## Lidar-Level Localization With Radar? The CFEAR Approach to Accurate, Fast, and Robust Large-Scale Radar Odometry in Diverse Environments
-
+# Lidar-Level Localization With Radar? The CFEAR Approach to Accurate, Fast, and Robust Large-Scale Radar Odometry in Diverse Environments
+This repository implements the most recent version of CFEAR Radar odometry.
 
 This guide describes how to download data and estimate radar odometry using CFEAR Radar odometry
 
