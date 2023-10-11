@@ -146,6 +146,16 @@ Don't forget to specify the sensor resolution and the dataset parameter if you u
 ## Updates
 Follow our updates [here](https://github.com/dan11003/CFEAR_Radarodometry).
 
+## CFEAR use cases
+
+### April 2023 - TBV Radar SLAM 
+In the article TBV Radar SLAM by Adolfsson et al. CFEAR was integrated with robust loop closure into a fully-fledged system for large-scale, real-time, radar-only SLAM.
+The method generalizes across diverse environments without the need for returning parameters. The [code is released here](https://github.com/dan11003/tbv_slam_public).
+
+
+### October 2023 - RadaRays
+[RadaRays](https://arxiv.org/pdf/2310.03505.pdf) is a method for simulating radar data, released as a gazebo plugin. Mock et al. were able to simulate radar scans from a prior lidar map, and accurately estimate radar odometry in the MulRan dataset. The estimated trajectories closely resemble the odometry estimated from real radar data.
+
 
 
 
