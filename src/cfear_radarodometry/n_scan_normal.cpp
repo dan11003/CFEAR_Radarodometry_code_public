@@ -216,10 +216,10 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
 
 
 
-  double angle_outlier = std::cos(M_PI/6.0);
-  int_pair scan_pair = std::make_pair(scan_idx_tar, scan_idx_src);
+  const double angle_outlier = std::cos(M_PI/6.0);
+  const int_pair scan_pair = std::make_pair(scan_idx_tar, scan_idx_src);
   std::unordered_map<size_t,double> stamps;
-  double curr_radius = (itr_ == 1) ? 2*radius_ : radius_; // course to fine strategy
+  const double curr_radius = (itr_ == 1) ? 2*radius_ : radius_; // course to fine strategy
 
   Eigen::Affine2d Tsrctotar = Ttar.inverse()*Tsrc;    // Associate in global reference frame based normals and center
   //cout<<"tar: "<<scan_idx_tar<<", src: "<<scan_idx_src<<", par: "<<parameters.size()<<endl;
@@ -232,7 +232,7 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
 
       double tfactor = src_local->GetCellRelTimeStamp(src_idx, ccw_); // not used ATM
       stamps[src_idx] = tfactor;
-      Eigen::Affine2d  Tcomp = vectorToAffine2d(tfactor*vel_parameters_[0], tfactor*vel_parameters_[1], tfactor*vel_parameters_[2]);
+      const Eigen::Affine2d Tcomp = vectorToAffine2d(tfactor*vel_parameters_[0], tfactor*vel_parameters_[1], tfactor*vel_parameters_[2]);
       Tsrctotar = Ttar.inverse()*Tsrc*Tcomp; //  Target frame <- odom frame <- corrected distortion <- observation in src frame
     }
 
@@ -241,8 +241,8 @@ void n_scan_normal_reg::AddScanPairCost(MapNormalPtr& target_local, MapNormalPtr
     std::vector<int> tar_idx_nearby = target_local->GetClosestIdx(src_trans_mean, curr_radius);
     int max_n_terms = 1, n_terms = 0;
     for(auto &&tar_idx : tar_idx_nearby){
-      Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(src_idx);// src.block<2,1>(0,src_idx);
-      Eigen::Vector2d tar_normal = target_local->GetNormal2d(tar_idx);  //.block<2,1>(0,tar_idx);
+      const Eigen::Vector2d src_normal_trans = Tsrctotar.linear()* src_local->GetNormal2d(src_idx);// src.block<2,1>(0,src_idx);
+      const Eigen::Vector2d tar_normal = target_local->GetNormal2d(tar_idx);  //.block<2,1>(0,tar_idx);
       const double direction_similarity = std::max(src_normal_trans.dot(tar_normal), 0.0);
       if(direction_similarity > angle_outlier){ // Gives slightly better accuracy and runtime-performance
 
