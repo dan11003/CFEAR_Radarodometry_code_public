@@ -14,7 +14,7 @@
 #include "tuple"
 #include "list"
 #include "ceres/autodiff_cost_function.h"
-#include "ceres/local_parameterization.h"
+//#include "ceres/local_parameterization.h"
 #include "ceres/ceres.h"
 #include "angles/angles.h"
 
