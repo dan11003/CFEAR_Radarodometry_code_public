@@ -279,7 +279,7 @@ public:
   }
   static ceres::CostFunction* Create(
       const Eigen::Vector3d& target_mean, const Eigen::Matrix3d& tar_sqrt_information, double alpha) {
-    return new ceres::AutoDiffCostFunction<mahalanobisDistanceError,1, 3>(new mahalanobisDistanceError (target_mean, tar_sqrt_information, alpha));
+    return new ceres::AutoDiffCostFunction<mahalanobisDistanceError,3, 3>(new mahalanobisDistanceError (target_mean, tar_sqrt_information, alpha));
   }
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   private:
