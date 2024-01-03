@@ -152,7 +152,7 @@ The method generalizes across diverse environments without the need for returnin
 
 
 ### October 2023 - RadaRays
-[RadaRays](https://arxiv.org/pdf/2310.03505.pdf) is a method for simulating radar data, released as a gazebo plugin. Mock et al. were able to simulate radar scans from a prior lidar map, and accurately estimate radar odometry in the MulRan dataset. The estimated trajectories closely resemble the odometry estimated from real radar data.
+[RadaRays](https://arxiv.org/pdf/2310.03505.pdf) is a method for simulating radar data, released as a gazebo plugin. Mock et al. were able to simulate radar scans by raytracing within a lidar map, and accurately estimate radar odometry in the MulRan dataset. The estimated trajectories closely resemble the odometry estimated from real radar data. The [code](https://github.com/uos/radarays_ros) and a [gazebo radar plugin](https://github.com/uos/radarays_gazebo_plugins) for the project has been released.
 
 
 

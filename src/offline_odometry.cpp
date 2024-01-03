@@ -271,7 +271,7 @@ void ReadOptions(const int argc, char**argv, OdometryKeyframeFuser::Parameters& 
     par.weight_intensity_ = vm["weight_intensity"].as<bool>();
     par.compensate = !vm["disable_compensate"].as<bool>();
     par.use_guess = true; //vm["soft_constraint"].as<bool>();
-    par.soft_constraint = false; // soft constraint is rarely useful, this is changed for testing of initi // vm["soft_constraint"].as<bool>();
+    par.soft_constraint = vm["soft_constraint"].as<bool>();
     par.radar_ccw = vm["radar_ccw"].as<bool>();
 
 }
