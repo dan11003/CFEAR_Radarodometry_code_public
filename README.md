@@ -88,6 +88,26 @@ Some of the evaluation output is:
  
 NOTE: Results are slightly better compared to the article.
 
+## Boreas dataset
+Download from our [google drive](https://drive.google.com/drive/folders/1_5T4BEUUoVQ_XnlSYojDUCCkI7bcqwur)
+Then create the followin folder;
+```
+$ mkdir -p /home/${USER}/Documents/boreas/boreas-2020-12-01-13-26/
+$ cd /home/${USER}/Documents/boreas/boreas-2020-12-01-13-26/
+$ mv ~/Downloads/boreas-2020-12-01-13-26.bag .
+```
+
+Then, proceed running CFEAR:
+```
+roscd cfear_radarodometry/launch
+./boreas_demo
+```
+
+The result file is stored in directory 
+```
+/home/${USER}/Documents/boreas/boreas-2020-01-13-26/eval/<yyyy-mm-dd_HH:mm>/est/boreas
+```
+This result file can be used in the official [Boreas odometry benchmark](https://github.com/utiasASRL/pyboreas/blob/master/pyboreas/eval/odometry.md)
 
 ## Troubleshooting
 

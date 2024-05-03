@@ -231,6 +231,27 @@ void EvalTrajectory::WriteCov(const std::string& path, const poseStampedVector& 
     return;
 }
 
+void EvalTrajectory::WriteBoreas(const std::string& path, const poseStampedVector& v){
+  std::ofstream evalfile;
+  cout<<"Saving: "<<v.size()<<" poses to file: "<<path<<endl;
+  evalfile.open(path);
+  
+  for(size_t i=0;i<v.size();i++){
+    // get the Affine3d matrix from the tuple
+    Eigen::MatrixXd rot((v[i].pose.linear() * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX())).matrix());
+    Eigen::MatrixXd trans(v[i].pose.matrix());
+    trans.block<3,3>(0,0) = rot;
+    Eigen::MatrixXd m(trans.inverse());
+    // print to the file
+    evalfile << v[i].t.sec << std::setfill('0') << std::setw(6) << int(v[i].t.nsec/1000) << " " << std::setw(0);
+    evalfile << std::fixed << std::showpoint;
+    assert(m.rows()== 4 && m.cols()==4);
+    evalfile << MatToString(m) << endl;
+  }
+  evalfile.close();
+  return;
+}
+
 
 void Plot(){
 
@@ -273,6 +294,7 @@ void EvalTrajectory::Save(){
   else if(gt_vek.empty()){
     cout<<"No ground truth? No problem! without gps the need of radar based localization is even larger"<<endl;
     boost::filesystem::create_directories(par.est_output_dir);
+    boost::filesystem::create_directories(par.est_output_dir + "/" + "boreas");
     std::string est_path = par.est_output_dir+DatasetToSequence(par.sequence);
     std::string est_path_tum = par.est_output_dir+ "tum_" +DatasetToSequence(par.sequence);
     std::string est_path_cov = par.est_output_dir+ "cov_" +DatasetToSequence(par.sequence);
@@ -281,6 +303,8 @@ void EvalTrajectory::Save(){
     Write(est_path,  est_vek);
     WriteTUM(est_path_tum, est_vek);
     WriteCov(est_path_cov, est_vek);
+    std::string est_path_boreas = par.est_output_dir + "/boreas/" + par.sequence +".txt"; 
+    WriteBoreas(est_path_boreas, est_vek);
     cout<<"Trajectory saved"<<endl;
     return;
     
@@ -296,11 +320,15 @@ void EvalTrajectory::Save(){
   boost::filesystem::create_directories(par.gt_output_dir);
   cout << "create: " << par.est_output_dir << std::endl;
   boost::filesystem::create_directories(par.est_output_dir);
+  boost::filesystem::create_directories(par.est_output_dir + "/" + "boreas");
+
   std::string gt_path  = par.gt_output_dir +DatasetToSequence(par.sequence);
   std::string gt_path_tum  = par.gt_output_dir+ "tum_" +DatasetToSequence(par.sequence);
   std::string est_path = par.est_output_dir+DatasetToSequence(par.sequence);
   std::string est_path_tum = par.est_output_dir + "tum_" + DatasetToSequence(par.sequence);
   std::string est_path_cov = par.est_output_dir + "cov_" + DatasetToSequence(par.sequence);
+  std::string est_path_boreas = par.est_output_dir + "/boreas/" + par.sequence +".txt"; 
+
   cout<<"Saving est_vek.size()="<<est_vek.size()<<", gt_vek.size()="<<gt_vek.size()<<endl;
   cout<<"To path: \n\" "<<gt_path<<"\""<<"\n\""<<est_path<<"\""<<endl;
 
@@ -309,6 +337,8 @@ void EvalTrajectory::Save(){
   Write(est_path,  est_vek);
   WriteTUM(est_path_tum,  est_vek);
   WriteCov(est_path_cov,  est_vek);
+  WriteBoreas(est_path_boreas, est_vek);
+
   cout<<"Trajectories saved"<<endl;
 
   return;

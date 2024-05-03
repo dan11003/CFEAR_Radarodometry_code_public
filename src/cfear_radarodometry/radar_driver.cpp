@@ -30,6 +30,8 @@ radarDriver::radarDriver(const Parameters& pars, bool disable_callback):par(pars
   if(!disable_callback){
     if(par.dataset=="oxford")
       sub = nh_.subscribe<sensor_msgs::Image>("/Navtech/Polar", 1000, &radarDriver::CallbackOxford, this);
+    else if(par.dataset=="boreas")
+      sub = nh_.subscribe<sensor_msgs::Image>("/Navtech/Polar", 1000, &radarDriver::CallbackBoreas, this);
     else
       sub = nh_.subscribe<sensor_msgs::Image>("/Navtech/Polar", 1000, &radarDriver::Callback, this);
   }
@@ -160,10 +162,31 @@ void radarDriver::Process(){
     */
   }
 
+  void radarDriver::CallbackBoreas(const sensor_msgs::ImageConstPtr &radar_image_polar)
+  {
+    if(radar_image_polar==NULL){
+      cerr<<"Radar image NULL"<<endl;
+      exit(0);
+    }
+    ros::Time t0 = ros::Time::now();
+
+    cv_polar_image = cv_bridge::toCvCopy(radar_image_polar, sensor_msgs::image_encodings::TYPE_8UC1);
+
+    cv::Mat cv_polar_image_flipped;
+    cv::flip(cv_polar_image->image, cv_polar_image_flipped, 0);
+    cv_polar_image->image = cv_polar_image_flipped;
+    cv_polar_image->header.stamp = radar_image_polar->header.stamp.toSec() < 0.001 ? ros::Time::now() : radar_image_polar->header.stamp;; //rosparam set use_sim_time true
+    Process();
+    ros::Time t1 = ros::Time::now();
+    CFEAR_Radarodometry::timing.Document("Filtering",CFEAR_Radarodometry::ToMs(t1-t0));
+  }
+
   void radarDriver::CallbackOffline(const sensor_msgs::ImageConstPtr& radar_image_polar,  pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_peaks){
 
     if(par.dataset=="oxford")
       CallbackOxford(radar_image_polar);
+    else if(par.dataset=="boreas")
+      CallbackBoreas(radar_image_polar);
     else
       Callback(radar_image_polar);
 
