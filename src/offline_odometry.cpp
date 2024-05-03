@@ -83,12 +83,15 @@ public:
         tf::poseMsgToEigen(msg_odom.pose.pose, stamped_gt_pose.pose);
         //stamped_gt_pose.pose = stamped_gt_pose.pose;//transform into sensor frame
         Eigen::Matrix4d m = stamped_gt_pose.pose.matrix();
+        if (rad_pars.dataset == "boreas")
+          m.block<3,3>(0,0) = m.block<3,3>(0,0) * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()); 
         m(0,2) = 0; m(2,0) = 0; m(2,1) = 0; m(1,2) = 0; m(2,2) = 1; // 3d -> 2d
         stamped_gt_pose.pose = Eigen::Affine3d(m);
         static Eigen::Affine3d Tfirst_i = stamped_gt_pose.pose.inverse();
         stamped_gt_pose.pose = Tfirst_i*stamped_gt_pose.pose;
         eval.CallbackGTEigen(stamped_gt_pose);
 
+        tf::poseEigenToMsg(stamped_gt_pose.pose, msg_odom.pose.pose);
         msg_odom.header.stamp = ros::Time::now();
         msg_odom.header.frame_id = "world";
         pub_odom.publish(msg_odom);

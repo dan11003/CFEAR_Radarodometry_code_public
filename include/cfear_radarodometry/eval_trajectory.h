@@ -166,6 +166,8 @@ private:
 
   void WriteCov(const std::string& path, const poseStampedVector& v);
 
+  void WriteBoreas(const std::string& path, const poseStampedVector& v);
+
   void PrintStatus();
 
   poseStampedVector::iterator FindElement(const ros::Time& t);

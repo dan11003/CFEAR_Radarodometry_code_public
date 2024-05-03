@@ -100,6 +100,8 @@ private:
 
   void CallbackOxford(const sensor_msgs::ImageConstPtr &radar_image_polar);
 
+  void CallbackBoreas(const sensor_msgs::ImageConstPtr &radar_image_polar);
+
   void Process();
 
 
