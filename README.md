@@ -3,7 +3,8 @@ This repository implements the most recent version of CFEAR Radar odometry.
 
 This guide describes how to download data and estimate radar odometry using CFEAR Radar odometry
 
-## News (April 2023): Article is now published in Transactions on Robotics
+🎉 Exciting News - October 2024 🎉
+🏆 Our article has won the ["Best Paper Award in Computer & Robot Vision!"](https://www.linkedin.com/posts/ieee-ras-crv_computer-robot-vision-activity-7252746166373699586-usRS?utm_source=share&utm_medium=member_desktop)
 
 Paper: [T-RO](https://ieeexplore.ieee.org/document/9969174) or on
 [arXiv](https://arxiv.org/abs/2211.02445)
